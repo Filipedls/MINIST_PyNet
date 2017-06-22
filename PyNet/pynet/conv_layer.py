@@ -5,7 +5,7 @@ import numpy as np
 
 class ConvLayer(Layer):
 
-	def __init__( self, input_shape, n_filters, kern_size, padding, stride, act_type='relu'):
+	def __init__( self, input_shape, n_filters, kern_size, padding, stride, act_type='lerelu'):
 		
 		Layer.__init__(self, 'convolution')
 		self.kern_size = (input_shape[0],)+kern_size
@@ -13,12 +13,12 @@ class ConvLayer(Layer):
 		self.n_filters = n_filters
 		self.padding = padding
 		self.stride = stride
-		self.bias = np.zeros(self.n_filters) #initWeights(self.n_filters, 0.01)
+		self.bias = zeros(self.n_filters) #initWeights(self.n_filters, 0.01)
 		self.weights = initWeights_xavier((self.input_size, self.n_filters))
 		self.input = 0
-		self.d_weights = np.zeros(self.weights.shape)
-		self.d_bias = np.zeros(self.bias.shape)
-		self.d_input = 0
+		self.d_weights = zeros(self.weights.shape)
+		self.d_bias = zeros(self.bias.shape)
+		#self.d_input = 0
 
 		self.output_shape = (self.n_filters,)+tuple(np.subtract(np.add(input_shape[1:3],2*self.padding), self.kern_size[1:3])/self.stride + 1)
 
@@ -37,7 +37,7 @@ class ConvLayer(Layer):
 		
 		#output = np.zeros(self.output_shape)
 
-		vec_input = np.zeros((self.output_shape[1]*self.output_shape[2],self.input_size))
+		vec_input = zeros((self.output_shape[1]*self.output_shape[2],self.input_size))
 
 		i = 0
 		for x_start in range(0,self.output_shape[1]):
@@ -60,28 +60,40 @@ class ConvLayer(Layer):
 
 		output = self.act.activate(output)
 
-		self.input = input
+		self.input_shape = input.shape
+		self.input_vec = vec_input
 		return output
 
 	def backward(self, d_output_error):
 
-		d_input = np.zeros(self.input.shape)
+		d_input = zeros(self.input_shape)
 
 		d_x_output = self.act.diff(d_output_error)#d_x_output = LeReLU_derivative(d_output_error)
 
+		self.d_bias = np.sum(d_x_output, axis=( 1, 2))
+
+		d_x_output_vec = d_x_output.transpose(1, 2, 0).reshape(self.n_filters, -1)
+
+		#print "out vec: ", d_x_output_vec.shape, " - in vec: " , self.input_vec.shape
+
+		self.d_weights = d_x_output_vec.dot(self.input_vec).reshape(self.weights.shape)
+
+		d_input_vec = np.dot(self.weights, d_x_output_vec)
+
+		i = 0
 		for x_start in range(0,d_output_error.shape[1]):
 			x_end = x_start+self.kern_size[1]
 
 			for y_start in range(0,d_output_error.shape[2]):
 				y_end = y_start+self.kern_size[2]
 
-				d_x_output_xy = d_x_output[:,x_start,y_start].flatten()
+				#d_x_output_xy = d_x_output[:,x_start,y_start].flatten()
 
-				d_input[:,x_start:x_end, y_start:y_end] += np.reshape(np.dot(d_x_output_xy, np.transpose(self.weights)), self.kern_size)
-			
-				input_xy = self.input[:,x_start:x_end, y_start:y_end].flatten()
-				self.d_weights += np.outer(input_xy, d_x_output_xy)#np.dot(np.transpose(self.input), d_x_output)
-				self.d_bias += d_x_output_xy
+				d_input[:,x_start:x_end, y_start:y_end] += np.reshape(d_input_vec[:,i], self.kern_size)
+				i += 1
+				#input_xy = self.input[:,x_start:x_end, y_start:y_end].flatten()
+				#self.d_weights += np.outer(input_xy, d_x_output_xy)#np.dot(np.transpose(self.input), d_x_output)
+				#self.d_bias += d_x_output_xy
 
 				#for n_filter in range(0, self.n_filters):
 				#	weights = self.weights[n_filter,:,:,:] 
@@ -91,14 +103,14 @@ class ConvLayer(Layer):
 
 
 		#print "D IP SHAPE: " + str(d_input.shape)
-		self.d_input = d_input
+		#self.d_input = d_input
 		return d_input
 
 	def update_weights(self, learning_rate):
 		self.weights -= self.d_weights * learning_rate
 		self.bias -= self.d_bias * learning_rate
-		self.d_weights = np.zeros(self.weights.shape)
-		self.d_bias = np.zeros(self.bias.shape)
+		self.d_weights = zeros(self.weights.shape)
+		self.d_bias = zeros(self.bias.shape)
 		#self.weights[self.weights > 1] = 1
 		#self.weights[self.weights < -1] = -1
 		return True

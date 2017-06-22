@@ -3,3 +3,7 @@ Convs
 http://www.simon-hohberg.de/2014/10/10/conv-net.html
 https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
 http://cs231n.github.io/optimization-2/#backprop
+
+
+
+https://github.com/huyouare/CS231n/tree/master/assignment2/cs231n
