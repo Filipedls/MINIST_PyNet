@@ -20,7 +20,7 @@ class MaxPoolLayer(Layer):
 	# TODO: optimize
 	def forward(self, input):
 		
-		output = np.zeros(self.output_shape)
+		output = zeros(self.output_shape)
 
 		for x_out in range(0,self.output_shape[1]):
 			x_start = x_out*self.stride
@@ -43,7 +43,7 @@ class MaxPoolLayer(Layer):
 
 	def backward(self, d_output_error):
 
-		d_input = np.zeros(self.input_shape)
+		d_input = zeros(self.input_shape)
 
 		for x_start in range(0,d_output_error.shape[1]):
 			x_inp = x_start * self.stride

@@ -37,7 +37,7 @@ class ConvLayer(Layer):
 		
 		#output = np.zeros(self.output_shape)
 
-		vec_input = zeros((self.output_shape[1]*self.output_shape[2],self.input_size))
+		vec_input = empty((self.output_shape[1]*self.output_shape[2],self.input_size))
 
 		i = 0
 		for x_start in range(0,self.output_shape[1]):
@@ -54,9 +54,9 @@ class ConvLayer(Layer):
 
 				#	output[n_filter, x_start, y_start] = LeReLU(np.asarray(np.sum(kern_input * weights) + self.bias[n_filter]))
 
-		output = np.dot(vec_input, self.weights) + self.bias
+		output_vec = np.dot(vec_input, self.weights) + self.bias
 
-		output = np.reshape(output.transpose(),self.output_shape)
+		output = np.reshape(output_vec.transpose(),self.output_shape)
 
 		output = self.act.activate(output)
 
@@ -70,13 +70,13 @@ class ConvLayer(Layer):
 
 		d_x_output = self.act.diff(d_output_error)#d_x_output = LeReLU_derivative(d_output_error)
 
-		self.d_bias = np.sum(d_x_output, axis=( 1, 2))
+		self.d_bias += np.sum(d_x_output, axis=( 1, 2))
 
 		d_x_output_vec = d_x_output.transpose(1, 2, 0).reshape(self.n_filters, -1)
 
 		#print "out vec: ", d_x_output_vec.shape, " - in vec: " , self.input_vec.shape
 
-		self.d_weights = d_x_output_vec.dot(self.input_vec).reshape(self.weights.shape)
+		self.d_weights += d_x_output_vec.dot(self.input_vec).reshape(self.weights.shape)
 
 		d_input_vec = np.dot(self.weights, d_x_output_vec)
 

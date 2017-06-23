@@ -13,7 +13,7 @@ config = {
 	'test_set' : "../../mnist_png/test.txt",
 	'test_dir' : "../../mnist_png/testing/",
 	'ds_mean_std' : [[33.32],[76.83]],
-	'print_every_itr': 10
+	'print_every_itr': 1
 
 }
 
@@ -26,24 +26,26 @@ net_def_basic =  [['input', 1, 20, 20],
 
 
 net_def =  [['input', 1, 28, 28],
-			['conv', 3, 16, 0, 1],
 			['conv', 3, 32, 0, 1],
-			['maxpool', 2, 2],
 			['conv', 3, 64, 0, 1],
-			['conv', 3, 128, 0, 1],
 			['maxpool', 2, 2],
-			['fc', 1024, 'relu'],
-			['fc', 256, 'relu'],
+			['conv', 3, 128, 0, 1],
+			['conv', 3, 256, 0, 1],
+			['conv', 3, 512, 0, 1],
+			['maxpool', 2, 2],
+			['fc', 2048, 'lerelu'],
+			['fc', 1024, 'lerelu'],
+			['fc', 256, 'lerelu'],
 			['fc', 10, 'softmax'],
 			['error','l1']
-			]
+		   ]
 
 
 net = Net(net_def)
 
 trainer = Trainer(net, config)
 
-num_iter = 10000
+num_iter = 1000
 trainer.train( num_iter, 0.0005, 16)
 
 trainer.test()

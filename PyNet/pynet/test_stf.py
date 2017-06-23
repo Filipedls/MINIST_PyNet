@@ -1,10 +1,11 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+
+cenas = np.empty((2,2), dtype=np.uint8)
 
 
-b = np.array([np.ones(( 2, 2)),np.ones((2, 2))*2,np.ones(( 2, 2))*3,np.ones(( 2, 2))*4])
+print cenas.dtype 
+cenas[:,:] = np.ones((2,2))
 
-print b
-
-print "\nT:",b.transpose(1, 2, 0)
-
-print "\nALL:",b.transpose(1, 2, 0).reshape(4, -1)
+print cenas.dtype 

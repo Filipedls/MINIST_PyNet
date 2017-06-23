@@ -22,7 +22,7 @@ class FCLayer(Layer):
 		self.input = 0
 		self.d_weights = zeros(self.weights.shape)
 		self.d_bias = zeros(self.bias.shape)
-		self.d_input = 0
+		#self.d_input = 0
 
 		self.act = Activation(act_type)
 
@@ -53,8 +53,8 @@ class FCLayer(Layer):
 
 		d_input = np.dot(d_x_output, np.transpose(self.weights))
 		
-		self.d_weights = np.outer(self.input, d_x_output)#np.dot(np.transpose(self.input), d_x_output)
-		self.d_bias = d_x_output
+		self.d_weights += np.outer(self.input, d_x_output)#np.dot(np.transpose(self.input), d_x_output)
+		self.d_bias += d_x_output
 
 		#for n in range(0, self.n_neurons):
 		#	weights = self.weights[n,:] 
@@ -65,7 +65,7 @@ class FCLayer(Layer):
 		if self.do_reshape:
 			d_input = d_input.reshape(self.input_shape)
 
-		self.d_input = d_input
+		#self.d_input = d_input
 		return d_input
 
 	def update_weights(self, learning_rate):

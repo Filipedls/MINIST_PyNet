@@ -28,7 +28,7 @@ class ErrorLayer(Layer):
 		return entropy
 
 	def backward(self):
-		return self.output_error
+		return astype(self.output_error)
 
 	def __del__(self):
 		class_name = self.__class__.__name__

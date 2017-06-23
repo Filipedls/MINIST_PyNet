@@ -6,20 +6,34 @@ from timeit import default_timer as timer
 
 class Trainer:
 
-	def __init__( self, net, config):
+	def __init__( self, net, config, input_ds = None):
 		print "* TRAINER CONFIG: ", config
 
 		self.net = net
 
-		self.training_set = self.get_set_from_txt(config['train_set'])
-		self.training_n = len(self.training_set)
-		self.training_dir = config['train_dir']
-		print "* TRAINER: ", len(self.training_set), " images found for train."
+		if config.has_key('train_set'):
+			self.training_set = self.get_set_from_txt(config['train_set'])
+			self.training_n = len(self.training_set)
+			self.training_dir = config['train_dir']
+			print "* TRAINER: ", len(self.training_set), " images found for train."
 
-		self.test_set = self.get_set_from_txt(config['test_set'])
-		self.test_n = len(self.test_set)
-		self.test_dir = config['test_dir']
-		print "* TRAINER: ", len(self.test_set), " images found for test."
+			self.input_from_dir = True
+
+		elif input_ds != None:
+			self.input_from_dir = False
+			self.input_ds = input_ds
+			self.training_n = len(self.input_ds)
+
+		else:
+			self.training_n = 0
+			print "* TRAINER: NO TRAINIG DATASET FOUND!!!"
+
+
+		if config.has_key('test_set'):
+			self.test_set = self.get_set_from_txt(config['test_set'])
+			self.test_n = len(self.test_set)
+			self.test_dir = config['test_dir']
+			print "* TRAINER: ", len(self.test_set), " images found for test."
 
 		if config.has_key('ds_mean_std'):
 			self.mean = config['ds_mean_std'][0][0]
@@ -32,6 +46,9 @@ class Trainer:
 		self.print_every_itr = config['print_every_itr']
 
 	def train(self, max_iter, learning_rate, batch_size):
+
+		if self.training_n == 0:
+			raise ValueError("* NO TRAINING IMAGES!")
 
 		print "Training ", self.training_n, " images; batch: ", batch_size
 
@@ -48,12 +65,10 @@ class Trainer:
 			for i_batch in range(0,batch_size):
 				i = (iter * batch_size + i_batch) % self.training_n
 				# Input
-				train_sample = self.training_set[train_samples_idx[i]]
-				path = self.training_dir + train_sample['path']
-				input = self.preprocess_img(path, self.mean, self.std)
+				input, input_class = self.get_input(train_samples_idx[i])
 
 				label = zeros(self.net.n_classes)
-				label[train_sample['class']] = 1
+				label[input_class] = 1
 
 				start = timer()
 				error += self.net.forward(input, label)
@@ -79,7 +94,7 @@ class Trainer:
 				time_f = 0.0
 
 
-			if iter == 10:
+			if iter == 20:
 				learning_rate = 10*learning_rate
 
 			if iter > 5000:
@@ -97,9 +112,11 @@ class Trainer:
 		for i in range(0,self.test_n):
 
 			# Input
+			#input, input_class = self.get_input(train_samples_idx[i])
+
 			test_sample = self.test_set[i]
 			path = self.test_dir + test_sample['path']
-			input = self.preprocess_img(path, self.mean, self.std)
+			input = self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
 
 			label = zeros(self.n_classes)
 			label[test_sample['class']] = 1
@@ -143,10 +160,28 @@ class Trainer:
 		print "* Dataset mean: ", mean, "; std: ", std
 		return mean, std
 
-	def preprocess_img(self, path, mean, std):
+	def get_input(self, train_sample_idx):
+		if self.input_from_dir:
+			train_sample = self.training_set[train_sample_idx]
+			path = self.training_dir + train_sample['path']
+			input = self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
+			input_class = train_sample['class']
+		else:
+			input_raw = self.input_ds[train_sample_idx][0]
+			input = self.preprocess_img(input_raw, self.mean, self.std)
+			input_class =  self.input_ds[train_sample_idx][1]
 
-		img = cv2.imread(path, 4)
-		input = cv2.resize(img, tuple(self.net.input_size[1:3]), interpolation=cv2.INTER_AREA)
+		input = astype(input)
+		return input, input_class
+
+	def get_img_from_dir(self, path):
+		return cv2.imread(path, 4)
+
+	def preprocess_img(self, input, mean, std):
+
+		if input.shape[0:2] != self.net.input_size[1:3]:
+			input = cv2.resize(input, tuple(self.net.input_size[1:3]), interpolation=cv2.INTER_AREA)
+		
 		if self.net.input_size[0] == 1:#len(input.shape) == 2:
 			input = np.expand_dims(input, axis=0)
 		else:
