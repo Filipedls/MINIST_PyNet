@@ -6,23 +6,22 @@ from timeit import default_timer as timer
 
 class Trainer:
 
-	def __init__( self, net, config, input_ds = None):
-		print "* TRAINER CONFIG: ", config
+	def __init__( self, net, config):
+		#print "* TRAINER CONFIG: ", config
 
 		self.net = net
 
 		if config.has_key('train_set'):
-			self.training_set = self.get_set_from_txt(config['train_set'])
+			if isinstance(config['train_set'], str):
+				self.training_set = self.get_set_from_txt(config['train_set'])
+				self.training_dir = config['train_dir']
+				self.input_from_dir = True
+			else:
+				self.training_set = config['train_set']
+				self.input_from_dir = False
+
 			self.training_n = len(self.training_set)
-			self.training_dir = config['train_dir']
-			print "* TRAINER: ", len(self.training_set), " images found for train."
-
-			self.input_from_dir = True
-
-		elif input_ds != None:
-			self.input_from_dir = False
-			self.input_ds = input_ds
-			self.training_n = len(self.input_ds)
+			print "* TRAINER: ", len(self.training_set), " images found for train, dir:", self.input_from_dir
 
 		else:
 			self.training_n = 0
@@ -30,20 +29,28 @@ class Trainer:
 
 
 		if config.has_key('test_set'):
-			self.test_set = self.get_set_from_txt(config['test_set'])
+			if self.input_from_dir:
+				self.test_set = self.get_set_from_txt(config['test_set'])
+				self.test_dir = config['test_dir']
+			else:
+				self.test_set = config['test_set']
+
 			self.test_n = len(self.test_set)
-			self.test_dir = config['test_dir']
+
 			print "* TRAINER: ", len(self.test_set), " images found for test."
 
 		if config.has_key('ds_mean_std'):
-			self.mean = config['ds_mean_std'][0][0]
-			self.std = config['ds_mean_std'][1][0]
+			self.mean = config['ds_mean_std'][0]
+			self.std = config['ds_mean_std'][1]
 			print "* Dataset mean found: ", self.mean, "; std: ", self.std
 		else:
+			self.mean = 0.0
+			self.std = 1.0
 			self.mean, self.std = self.get_dataset_mean_std()
 			print "* Dataset mean checked: ", self.mean, "; std: ", self.std
 
 		self.print_every_itr = config['print_every_itr']
+
 
 	def train(self, max_iter, learning_rate, batch_size):
 
@@ -66,7 +73,7 @@ class Trainer:
 				i = (iter * batch_size + i_batch) % self.training_n
 				# Input
 				input, input_class = self.get_input(train_samples_idx[i])
-
+				#print "INPUT:\n",np.max(input),np.min(input)
 				label = zeros(self.net.n_classes)
 				label[input_class] = 1
 
@@ -87,7 +94,7 @@ class Trainer:
 
 			if iter % self.print_every_itr == 0:
 				print_iter_n = (batch_size*self.print_every_itr)
-				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tT: %.1f %.1f ms" % (time_f*1000/print_iter_n, time*1000/print_iter_n)," (",scale,")"
+				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tT: %.1f %.1f ms" % (time_f*1000/print_iter_n, time*1000/print_iter_n)," (%.2f"%(scale*1000),")"
 				error = 0.0
 				scale = 0
 				time = 0.0
@@ -95,7 +102,7 @@ class Trainer:
 
 
 			if iter == 20:
-				learning_rate = 10*learning_rate
+				learning_rate = 5*learning_rate
 
 			if iter > 5000:
 				learning_rate = 0.9992*learning_rate
@@ -109,25 +116,25 @@ class Trainer:
 		n_samples = 0
 		right = 0
 		time = 0.0
-		for i in range(0,self.test_n):
+		for i in range(self.test_n):
 
 			# Input
 			#input, input_class = self.get_input(train_samples_idx[i])
 
-			test_sample = self.test_set[i]
-			path = self.test_dir + test_sample['path']
-			input = self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
+			#test_sample = self.test_set[i]
+			#path = self.test_dir + test_sample['path']
+			input, class_n = self.test_set[i]#self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
 
-			label = zeros(self.n_classes)
-			label[test_sample['class']] = 1
+			label = zeros(self.net.n_classes)
+			label[class_n] = 1
 
 			start = timer()
 			error += self.net.forward(input, label)
 			time += timer() - start
 
-			pred = self.layers[-1].input
+			pred = self.net.layers[-1].input
 
-			if test_sample['class'] == np.argmax(pred):
+			if class_n == np.argmax(pred):
 				right += 1
 
 			n_samples += 1
@@ -138,7 +145,8 @@ class Trainer:
 
 	def get_dataset_mean_std(self):
 
-		input = cv2.imread(self.training_dir + self.training_set[0]['path'], 4)#, cv2.IMREAD_GRAYSCALE)
+		input, cls = self.get_input(0)#, cv2.IMREAD_GRAYSCALE)
+		print input.shape
 		if len(input.shape) == 3:
 			mean = np.zeros(3)
 			std = np.zeros(3)
@@ -146,13 +154,12 @@ class Trainer:
 			mean = 0.0
 			std = 0.0
 
-		for imgPath in self.training_set:
+		for idx in range(self.training_n):
 			# Input
-			path = self.training_dir + imgPath['path']
-			input = cv2.imread(path, 4)#, cv2.IMREAD_GRAYSCALE)
+			input, cls = self.get_input(idx)
 
-			mean += np.mean(input, axis = (0,1))
-			std += np.std(input, axis = (0,1))
+			mean += np.mean(input, axis = (1,2))
+			std += np.std(input, axis = (1,2))
 
 		mean = mean / self.training_n
 		std = std / self.training_n
@@ -167,9 +174,9 @@ class Trainer:
 			input = self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
 			input_class = train_sample['class']
 		else:
-			input_raw = self.input_ds[train_sample_idx][0]
+			input_raw = astype(self.training_set[train_sample_idx][0])
 			input = self.preprocess_img(input_raw, self.mean, self.std)
-			input_class =  self.input_ds[train_sample_idx][1]
+			input_class =  self.training_set[train_sample_idx][1]
 
 		input = astype(input)
 		return input, input_class
@@ -179,15 +186,17 @@ class Trainer:
 
 	def preprocess_img(self, input, mean, std):
 
-		if input.shape[0:2] != self.net.input_size[1:3]:
+		if input.shape[1:3] != self.net.input_size[1:3]:
 			input = cv2.resize(input, tuple(self.net.input_size[1:3]), interpolation=cv2.INTER_AREA)
 		
 		if self.net.input_size[0] == 1:#len(input.shape) == 2:
 			input = np.expand_dims(input, axis=0)
-		else:
+		elif self.input_from_dir:
 			input = np.transpose(input, (2,0,1))
 
-		input = (input - mean)/std
+		input[0,:,:] = (input[0,:,:] - mean[0])/std[0]
+		input[1,:,:] = (input[1,:,:] - mean[1])/std[1]
+		input[2,:,:] = (input[2,:,:] - mean[2])/std[2]
 
 		#input = input/(255.0/2.0) - 1.0
 

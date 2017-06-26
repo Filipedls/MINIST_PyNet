@@ -40,7 +40,10 @@ class Activation:
 
 	def LeReLU( self, x):
 		out = x
-		self.diff_mat = out < 0
+		try:
+			self.diff_mat = out < 0
+		except Warning:
+			print self.diff_mat
 		out[self.diff_mat] = self.LeRelU_slope*x[self.diff_mat]
 		return out
 
@@ -57,6 +60,7 @@ class Activation:
 		return x * (1.0 - d_x)
 
 	def softmax( self, x):
+		x = x - np.max(x)
 		x = np.exp(x)
 		x = x/np.sum(x)
 		return x

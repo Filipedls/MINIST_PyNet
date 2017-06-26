@@ -37,20 +37,25 @@ class Net:
 
 	def forward(self, input, ground_true):
 		layer_input = input
+		#print "F times:"
 		for layer in self.layers:
+			start = timer()
 			if layer.type == 'error':
 				layer_input = layer.forward(layer_input, ground_true)
 			else:
 				layer_input = layer.forward(layer_input)
-
+			#print layer.type+" %.2f ms"%((timer() - start)*1000)
 		return layer_input
 
 	def backward(self):
+		#print "B times:"
 		for layer in reversed(self.layers):
+			start = timer()
 			if layer.type == 'error':
 				d_output_error = layer.backward()
 			else:
 				d_output_error = layer.backward(d_output_error)
+			#print layer.type+" %.2f ms"%((timer() - start)*1000)
 
 	def update_weights(self, learning_rate):
 		for layer in self.layers:

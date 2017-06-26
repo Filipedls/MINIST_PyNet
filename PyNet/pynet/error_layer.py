@@ -21,7 +21,9 @@ class ErrorLayer(Layer):
 		
 		self.output_error = pred - ground_true
 
-		entropy = -np.sum(ground_true * np.log(pred))
+		entropy = -np.sum(ground_true * np.log(pred+0.00001))
+
+		#print "gt:", ground_true,"pred:", pred,np.log(pred), "ERR:\n",self.output_error
 
 		#self.output_error = np.reshape(np.absolute(np.subtract(ground_true, pred)),pred_shape)
 		#print "OUTE: ", self.output_error, "N:", ny, "N2:",nh

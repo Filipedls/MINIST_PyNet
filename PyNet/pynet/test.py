@@ -45,7 +45,7 @@ net = Net(net_def)
 
 trainer = Trainer(net, config)
 
-num_iter = 1000
+num_iter = 10
 trainer.train( num_iter, 0.0005, 16)
 
 trainer.test()

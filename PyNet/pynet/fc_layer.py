@@ -51,7 +51,7 @@ class FCLayer(Layer):
 
 		d_x_output = self.act.diff(d_output_error)#self.act_map * d_output_error#ReLU_derivative(d_output_error)
 
-		d_input = np.dot(d_x_output, np.transpose(self.weights))
+		d_input = np.dot(self.weights, np.transpose(d_x_output))
 		
 		self.d_weights += np.outer(self.input, d_x_output)#np.dot(np.transpose(self.input), d_x_output)
 		self.d_bias += d_x_output
