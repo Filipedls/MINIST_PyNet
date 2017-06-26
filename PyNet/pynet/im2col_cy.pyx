@@ -1,3 +1,5 @@
+# python setup_cython.py build_ext --inplace
+
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -20,7 +22,7 @@ def im2col_cython(np.ndarray[DTYPE_t, ndim=4] x, int field_height,
             ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
 
     cdef np.ndarray[DTYPE_t, ndim=2] cols = np.zeros(
-            (C * field_height * field_width, N * HH * WW))
+            ( N * HH * WW, C * field_height * field_width))
 
     # Moving the inner loop to a C function with no bounds checking works, but does
     # not seem to help performance in any measurable way.
@@ -50,15 +52,19 @@ cdef int im2col_cython_inner(np.ndarray[DTYPE_t, ndim=2] cols,
                              int field_height, int field_width, int padding, int stride) except? -1:
     cdef int c, ii, jj, row, yy, xx, i, col
 
-    for c in range(C):
-        for ii in range(field_height):
-            for jj in range(field_width):
-                row = c * field_width * field_height + ii * field_height + jj
-                for yy in range(HH):
-                    for xx in range(WW):
-                        for i in range(N):
-                            col = yy * WW * N + xx * N + i
-                            cols[row, col] = x_padded[i, c, stride * yy + ii, stride * xx + jj]
+    row = 0
+    for i in range(N):
+        for yy in range(HH):
+            for xx in range(WW):
+                col = 0
+                for c in range(C):
+                    for ii in range(yy,yy+field_height):
+                        for jj in range(xx,xx+field_width):
+                            #print i, c, ii, jj, row, col
+                            cols[row, col] = x_padded[i, c, ii, jj]
+                            col += 1
+
+                row += 1
 
 
 def col2im_cython(np.ndarray[DTYPE_t, ndim=2] cols, int N, int C, int H, int W,

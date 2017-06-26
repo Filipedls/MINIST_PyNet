@@ -1,10 +1,35 @@
 import numpy as np
 #import matplotlib.pyplot as plt
 import cv2
+from timeit import default_timer as timer
+#import pyximport; pyximport.install()
+from im2col_cy import *
+from im2col import *
+
+
+def im2col_m(img, k_size, padding, stride):
+
+	input_size = k_size[0]*k_size[1]*img.shape[1]
+	output_shape = tuple(np.subtract(np.add(img.shape[2:4],2*padding), k_size)/stride + 1)
+	vec_input = np.empty((output_shape[0]*output_shape[1],input_size))
+
+	i = 0
+	y_range = range(0,output_shape[1])
+	for x_start in range(0,output_shape[0]):
+		x_end = x_start+k_size[0]
+
+		for y_start in y_range:
+			y_end = y_start+k_size[1]
+
+			vec_input[i,:] = img[0,:,x_start:x_end, y_start:y_end].flatten()
+			i += 1
+
+	return vec_input
+
 
 C = 2
-H = 4
-W =4 
+H = 400
+W =400
 
 cenas = np.ones((C,W,H))
 for ic in range(C):
@@ -12,32 +37,21 @@ for ic in range(C):
 		for iw in range(W):
 			cenas[ic, ih, iw] = ic + (ih+iw/10.0)/10.0
 
-pool_height = 2
-pool_width = 2
+#cenas = np.array([cenas, cenas])
+cenas = np.expand_dims(cenas, axis=0)
 
-print cenas
+start = timer()
+x_cols = im2col_cython(cenas, 3, 3, 0, 1)
+print " %.4f ms"%((timer() - start)*1000)
 
-cenas_S= cenas.reshape( C, H / pool_height, pool_height,
-                         W / pool_width, pool_width)
+#print cenas
+print "COLS: \n", x_cols.shape
 
+start = timer()
+x_cols = im2col_m(cenas, (3, 3), 0, 1)
+print " %.4f ms"%((timer() - start)*1000)
 
-print  cenas_S.max(axis=2).max(axis=3)
-
-cenas_S = cenas_S.transpose((0,1,3,2,4))
-
-cenas_col = cenas_S.reshape((-1,4))
-
-print cenas_S, cenas_S.reshape((-1,4))
-
-print cenas_col.argmax(axis=1)
-
-args = cenas_col.argmax(axis=1)
-
-print cenas_col[range(8),args].reshape(2,2,2)
+print "COLS2: \n", x_cols.shape
 
 
-dif = np.zeros(cenas_col.shape)
 
-dif[range(8),args] = np.ones(8)
-
-print dif.reshape(2,2,2,2,2).transpose((0,1,3,2,4)).reshape((C,W,H))
