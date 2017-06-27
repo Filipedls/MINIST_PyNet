@@ -28,21 +28,29 @@ def im2col_m(img, k_size, padding, stride):
 
 
 C = 2
-H = 400
-W =400
+H = 4
+W =4
 
 cenas = np.ones((C,W,H))
-for ic in range(C):
-	for ih in range(H):
-		for iw in range(W):
-			cenas[ic, ih, iw] = ic + (ih+iw/10.0)/10.0
+#for ic in range(C):
+#	for ih in range(H):
+#		for iw in range(W):
+#			cenas[ic, ih, iw] = ic + (ih+iw/10.0)/10.0
 
 #cenas = np.array([cenas, cenas])
 cenas = np.expand_dims(cenas, axis=0)
 
-start = timer()
-x_cols = im2col_cython(cenas, 3, 3, 0, 1)
-print " %.4f ms"%((timer() - start)*1000)
+output_shape = tuple(np.subtract(np.add(cenas.shape[2:4],2*0), (3,3) )/1 + 1)
+
+n_tries = 1
+time = 0.0
+x_cols = np.zeros(( 1 * output_shape[0] * output_shape[1], C * 3 * 3))
+for i in range(n_tries):
+	start = timer()
+	x_cols = im2col_cython(cenas, 3, 3, 1, output_shape[0], output_shape[1])
+	time += timer() - start
+
+print " %.4f ms"%(time/n_tries*1000)
 
 #print cenas
 print "COLS: \n", x_cols.shape
@@ -51,7 +59,10 @@ start = timer()
 x_cols = im2col_m(cenas, (3, 3), 0, 1)
 print " %.4f ms"%((timer() - start)*1000)
 
-print "COLS2: \n", x_cols.shape
+print "COLS2: \n", x_cols
+
+
+print col2im_cython(x_cols, 1, C, H, W, 3, 3, 0, 1, output_shape[0], output_shape[1])
 
 
 

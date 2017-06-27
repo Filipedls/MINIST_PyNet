@@ -88,11 +88,8 @@ class Trainer:
 					epoch += 1
 					random.shuffle(train_samples_idx)
 
-			# Update the weights at the end of every batch
-			scale = self.net.net_checks(learning_rate/batch_size)
-			self.net.update_weights(learning_rate/batch_size)
-
 			if iter % self.print_every_itr == 0:
+				scale = self.net.net_checks(learning_rate/batch_size)
 				print_iter_n = (batch_size*self.print_every_itr)
 				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tT: %.1f %.1f ms" % (time_f*1000/print_iter_n, time*1000/print_iter_n)," (%.2f"%(scale*1000),")"
 				error = 0.0
@@ -100,7 +97,9 @@ class Trainer:
 				time = 0.0
 				time_f = 0.0
 
-
+			# Update the weights at the end of every batch
+			self.net.update_weights(learning_rate/batch_size)
+			
 			if iter == 20:
 				learning_rate = 5*learning_rate
 
@@ -124,7 +123,7 @@ class Trainer:
 			#test_sample = self.test_set[i]
 			#path = self.test_dir + test_sample['path']
 			input, class_n = self.test_set[i]#self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
-
+			input = astype(input)
 			label = zeros(self.net.n_classes)
 			label[class_n] = 1
 

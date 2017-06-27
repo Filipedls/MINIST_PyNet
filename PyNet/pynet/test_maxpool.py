@@ -1,5 +1,4 @@
-from net import *
-from trainer import *
+from max_pool_layer import *
 from helpers import *
 import numpy as np
 import cv2
@@ -7,9 +6,9 @@ import math
 import random
 
 
-layer = pynet.MaxPoolLayer((2,4,4), (2,2), 2)
+layer = MaxPoolLayer((2,4,4), (2,2), 2)
 
-input = np.array([[[1, 0, 1, 0], 
+input = astype(np.array([[[1, 0, 1, 0], 
 				  [0, 0, 0, 0],
 				  [1, 0, 1, 0],
 				  [0, 0, 0, 0],
@@ -19,7 +18,7 @@ input = np.array([[[1, 0, 1, 0],
 				  [0, 0, 0, 0],
 				  [0, 1, 0, 1],
 				 ]
-				 ])
+				 ]))
 
 
 print "IN: \n", input, "\nOUT: \n", layer.forward(input)
