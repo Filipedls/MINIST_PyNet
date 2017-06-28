@@ -1,7 +1,8 @@
 class Layer:
 
-	def __init__( self, type):
+	def __init__( self, type, has_weights):
 		self.type = type
+		self.has_weights = has_weights
 		
 	def __del__(self):
 		class_name = self.__class__.__name__

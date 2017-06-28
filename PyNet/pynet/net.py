@@ -64,18 +64,6 @@ class Net:
 		#print "* NET: done updating weights."
 		return True
 
-	def net_checks(self, learning_rate):
 
-		scale = 0
-		n = 0
-		for layer in self.layers:
-			if layer.type != 'error' and layer.type != 'maxpool':
-				param_scale = np.linalg.norm(layer.weights.ravel())
-				update = -learning_rate * layer.d_weights
-				update_scale = np.linalg.norm(update.ravel())
-				n += 1
-				scale += update_scale / param_scale
-
-		return scale/n
 
 	#def __del__(self):

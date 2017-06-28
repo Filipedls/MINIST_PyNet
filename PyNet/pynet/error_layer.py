@@ -6,7 +6,7 @@ class ErrorLayer(Layer):
 
 	def __init__( self, type):
 		print "* Error: type: "+type
-		Layer.__init__(self, 'error')
+		Layer.__init__(self, 'error', False)
 		self.error_type = type
 		self.output_error = 0
 		self.input = 0

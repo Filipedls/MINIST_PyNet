@@ -7,7 +7,7 @@ class FCLayer(Layer):
 
 	def __init__( self, input_shape, n_neurons, act_type):
 
-		Layer.__init__(self, 'fc')
+		Layer.__init__(self, 'fc', True)
 
 		self.input_shape = input_shape
 		self.input_size = np.prod(np.array(input_shape))

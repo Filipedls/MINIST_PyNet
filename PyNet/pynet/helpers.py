@@ -2,6 +2,8 @@ import numpy as np
 
 my_dtype = np.float64
 
+#TODO: Ortogonal init
+
 def initWeights(shape, range):
 	return np.random.uniform(low=-range, high=range, size=shape, dtype = my_dtype)
 

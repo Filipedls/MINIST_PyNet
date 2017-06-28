@@ -8,7 +8,7 @@ class ConvLayer(Layer):
 
 	def __init__( self, input_shape, n_filters, kern_size, padding, stride, act_type='lerelu'):
 		
-		Layer.__init__(self, 'convolution')
+		Layer.__init__(self, 'convolution', True)
 		self.kern_size = (input_shape[0],)+kern_size
 		self.input_size = np.prod(self.kern_size)
 		self.n_filters = n_filters

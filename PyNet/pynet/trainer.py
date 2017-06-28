@@ -1,4 +1,5 @@
 from net import *
+from updater import *
 from helpers import *
 import random
 import cv2
@@ -11,6 +12,7 @@ class Trainer:
 
 		self.net = net
 
+		# SETS THE TRAINING SET
 		if config.has_key('train_set'):
 			if isinstance(config['train_set'], str):
 				self.training_set = self.get_set_from_txt(config['train_set'])
@@ -27,7 +29,7 @@ class Trainer:
 			self.training_n = 0
 			print "* TRAINER: NO TRAINIG DATASET FOUND!!!"
 
-
+		# SETS THE TEST SET
 		if config.has_key('test_set'):
 			if self.input_from_dir:
 				self.test_set = self.get_set_from_txt(config['test_set'])
@@ -39,6 +41,7 @@ class Trainer:
 
 			print "* TRAINER: ", len(self.test_set), " images found for test."
 
+		# Dataset mean and std
 		if config.has_key('ds_mean_std'):
 			self.mean = config['ds_mean_std'][0]
 			self.std = config['ds_mean_std'][1]
@@ -50,6 +53,14 @@ class Trainer:
 			print "* Dataset mean checked: ", self.mean, "; std: ", self.std
 
 		self.print_every_itr = config['print_every_itr']
+
+		# The algorithm used to optimize
+		if config.has_key('type'):
+			self.type = config['type']
+		else:
+			self.type = 'sgd'
+
+		self.updater = Updater(net, self.type)
 
 
 	def train(self, max_iter, learning_rate, batch_size):
@@ -65,10 +76,13 @@ class Trainer:
 		error = 0.0
 		epoch = 0
 		n_samples = 0
-		time = 0.0
+		time_b = 0.0
 		time_f = 0.0
+		time_btch = 0.0
+		scale = 0.0
 		for iter in range(1, max_iter+1):
 
+			start_btch = timer()
 			for i_batch in range(0,batch_size):
 				i = (iter * batch_size + i_batch) % self.training_n
 				# Input
@@ -77,34 +91,46 @@ class Trainer:
 				label = zeros(self.net.n_classes)
 				label[input_class] = 1
 
-				start = timer()
+				start_f = timer()
 				error += self.net.forward(input, label)
-				time_f += timer() - start
+				time_f += timer() - start_f
+				start_b = timer()
 				self.net.backward()
-				time += timer() - start
+				time_b += timer() - start_b
 
 				n_samples += 1
 				if i == self.training_n-1:
 					epoch += 1
 					random.shuffle(train_samples_idx)
 
-			if iter % self.print_every_itr == 0:
-				scale = self.net.net_checks(learning_rate/batch_size)
-				print_iter_n = (batch_size*self.print_every_itr)
-				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tT: %.1f %.1f ms" % (time_f*1000/print_iter_n, time*1000/print_iter_n)," (%.2f"%(scale*1000),")"
-				error = 0.0
-				scale = 0
-				time = 0.0
-				time_f = 0.0
+			time_btch += timer() - start_btch
 
 			# Update the weights at the end of every batch
-			self.net.update_weights(learning_rate/batch_size)
+			self.updater.update_weights(learning_rate/batch_size, 0.2)
+			iter_scale = self.updater.net_checks()
+			scale += iter_scale
 			
-			if iter == 20:
-				learning_rate = 5*learning_rate
+			if iter % self.print_every_itr == 0:
+				
+				print_iter_n = (batch_size*self.print_every_itr)
+				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tF %.1f B %.1f I %.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
+				error = 0.0
+				scale = 0
+				time_b = 0.0
+				time_f = 0.0
+				time_btch = 0.0
+				scale = 0.0
 
-			if iter > 5000:
-				learning_rate = 0.9992*learning_rate
+			#if iter == 1000:
+		#		learning_rate = 10*learning_rate
+
+			if iter == 30000 or iter == 20000:
+				learning_rate = 0.2*learning_rate
+
+			#if iter_scale*1000 > 5:
+			#	learning_rate = 0.5*learning_rate
+
+			learning_rate = learning_rate * (1. / (1. + 0.0000001 * iter))
 
 
 	def test(self):

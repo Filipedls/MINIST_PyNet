@@ -7,7 +7,7 @@ class MaxPoolLayer(Layer):
 
 	def __init__( self, input_shape, kern_size, stride):
 		
-		Layer.__init__(self, 'maxpool')
+		Layer.__init__(self, 'maxpool', False)
 		self.kern_size = kern_size
 		self.stride = stride
 		self.input_shape = input_shape
