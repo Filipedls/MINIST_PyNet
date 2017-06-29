@@ -15,7 +15,7 @@ config = {
 	'test_set' : cifar_ds_test,
 	'ds_mean_std' : [[ 125.30691805, 122.95039414, 113.86538318], [ 51.56153984, 50.82543151, 51.22018275]],
 	'print_every_itr': 100,
-	'type' : "momentum"
+	'type' : "sgd"
 
 }
 
@@ -38,6 +38,6 @@ net = Net(net_def)
 trainer = Trainer(net, config)
 
 num_iter = 40000
-trainer.train( num_iter, 0.0001, 4)
+if trainer.train( num_iter, 0.0003, 4, 0.0005):
 
-trainer.test()
+	trainer.test()

@@ -63,7 +63,7 @@ class Trainer:
 		self.updater = Updater(net, self.type)
 
 
-	def train(self, max_iter, learning_rate, batch_size):
+	def train(self, max_iter, learning_rate, batch_size, w_decay):
 
 		if self.training_n == 0:
 			raise ValueError("* NO TRAINING IMAGES!")
@@ -106,7 +106,7 @@ class Trainer:
 			time_btch += timer() - start_btch
 
 			# Update the weights at the end of every batch
-			self.updater.update_weights(learning_rate/batch_size, 0.2)
+			self.updater.update_weights(learning_rate/batch_size, 0.5, w_decay*batch_size)
 			iter_scale = self.updater.net_checks()
 			scale += iter_scale
 			
@@ -121,17 +121,19 @@ class Trainer:
 				time_btch = 0.0
 				scale = 0.0
 
-			#if iter == 1000:
-		#		learning_rate = 10*learning_rate
+			#if iter == 10000:
+			#	mom = 0.9
 
-			if iter == 30000 or iter == 20000:
+			if iter == 40000 or iter == 30000:
 				learning_rate = 0.2*learning_rate
 
+			if np.isnan(error):
+				print "ABORTED : ERROR TO BIG!"
+				return False
 			#if iter_scale*1000 > 5:
 			#	learning_rate = 0.5*learning_rate
 
-			learning_rate = learning_rate * (1. / (1. + 0.0000001 * iter))
-
+		return True
 
 	def test(self):
 

@@ -1,3 +1,5 @@
+from helpers import *
+
 class Layer:
 
 	def __init__( self, type, has_weights):
