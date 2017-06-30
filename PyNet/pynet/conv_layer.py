@@ -15,7 +15,7 @@ class ConvLayer(Layer):
 		self.padding = padding
 		self.stride = stride
 		self.bias = zeros(self.n_filters) #initWeights(self.n_filters, 0.01)
-		self.weights = initWeights_xavier((self.input_size, self.n_filters))
+		self.weights = initWeights_xavier((self.input_size, self.n_filters))#initWeights((self.input_size, self.n_filters), 0.01)#
 		self.input = 0
 		self.d_weights = zeros(self.weights.shape)
 		self.d_bias = zeros(self.bias.shape)
@@ -113,7 +113,7 @@ class ConvLayer(Layer):
 		#print "D IP SHAPE: " + str(d_input.shape)
 		#self.d_input = d_input
 		if self.padding > 0:
-			return d_input[:, :, self.padding:-self.padding, self.padding:-self.padding]
+			return d_input[ :, self.padding:-self.padding, self.padding:-self.padding]
 		return d_input
 
 	def update_weights(self, learning_rate):

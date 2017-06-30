@@ -18,7 +18,7 @@ class FCLayer(Layer):
 			
 		self.n_neurons = n_neurons
 		self.bias = zeros(self.n_neurons)#initWeights(n_neurons, 0.01)
-		self.weights = initWeights_xavier((self.input_size,self.n_neurons))
+		self.weights = initWeights_xavier((self.input_size,self.n_neurons))#initWeights((self.input_size, self.n_neurons), 0.01)#
 		self.input = 0
 		self.d_weights = zeros(self.weights.shape)
 		self.d_bias = zeros(self.bias.shape)

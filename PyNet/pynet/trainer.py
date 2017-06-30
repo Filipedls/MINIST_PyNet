@@ -73,6 +73,8 @@ class Trainer:
 		train_samples_idx = range(0,self.training_n)
 		random.shuffle(train_samples_idx)
 
+		mom = 0.9
+
 		error = 0.0
 		epoch = 0
 		n_samples = 0
@@ -106,7 +108,7 @@ class Trainer:
 			time_btch += timer() - start_btch
 
 			# Update the weights at the end of every batch
-			self.updater.update_weights(learning_rate/batch_size, 0.5, w_decay*batch_size)
+			self.updater.update_weights(learning_rate/batch_size, mom, w_decay*batch_size)
 			iter_scale = self.updater.net_checks()
 			scale += iter_scale
 			
@@ -121,11 +123,14 @@ class Trainer:
 				time_btch = 0.0
 				scale = 0.0
 
-			#if iter == 10000:
-			#	mom = 0.9
+			#if iter == 15000:
+				#learning_rate = 2*learning_rate
+			#	mom = 0.75
 
-			if iter == 40000 or iter == 30000:
-				learning_rate = 0.2*learning_rate
+			if iter == 30000 or iter  == 35000:
+				learning_rate = 0.9*learning_rate
+				batch_size = batch_size*1.5
+				#mom = mom+0.4
 
 			if np.isnan(error):
 				print "ABORTED : ERROR TO BIG!"
