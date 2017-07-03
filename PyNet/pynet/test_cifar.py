@@ -20,14 +20,16 @@ config = {
 }
 
 net_def =  [['input', 3, 32, 32],
-			['conv', 3, 16, 0, 1],
-			['conv', 3, 32, 0, 1],
+			['conv', 5, 32, 2, 1],
 			['maxpool', 2, 2],
-			['conv', 3, 64, 0, 1],
+			['conv', 5, 32, 2, 1],
+			['maxpool', 2, 2],
+			['conv', 5, 64, 2, 1],
 			['maxpool', 2, 2],
 			#['conv', 3, 64, 0, 1],
 			#['maxpool', 2, 2],
-			['fc', 200, 'lerelu'],
+			#['fc', 512, 'lerelu'],
+			['fc', 64, 'lerelu'],
 			['fc', 10, 'softmax'],
 			['error','l1']
 		   ]
@@ -37,7 +39,7 @@ net = Net(net_def)
 
 trainer = Trainer(net, config)
 
-num_iter = 40000
-if trainer.train( num_iter, 0.0005, 32, 0.0000):
+num_iter = 30000
+if trainer.train( num_iter, 0.00018, 20, 0.000001):
 
 	trainer.test()

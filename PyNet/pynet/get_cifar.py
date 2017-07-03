@@ -36,6 +36,9 @@ def get_cifar_10(ds_type):
 
 	dataset = []
 
+	class_lim = 10000
+	class_count = np.zeros(10)
+
 	for i in range(len(data_batches)):
 		dict = unpickle('../../cifar-10-batches-py/'+data_batches[i])
 
@@ -52,7 +55,10 @@ def get_cifar_10(ds_type):
 			# switch dims for cv2
 			#img = img.transpose((1,2,0))
 
-			dataset.append((img,label_n))
+			class_count[label_n] += 1
+			if class_count[label_n] <= class_lim:
+				dataset.append((img,label_n))
+			
 
 
 	print len(dataset)," cifar images found"

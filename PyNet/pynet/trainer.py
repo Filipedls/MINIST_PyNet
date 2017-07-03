@@ -68,7 +68,7 @@ class Trainer:
 		if self.training_n == 0:
 			raise ValueError("* NO TRAINING IMAGES!")
 
-		print "Training ", self.training_n, " images; batch: ", batch_size
+		print "Training", self.training_n, "images; batch:", batch_size, "; lr:", learning_rate, "; w_decay:", w_decay
 
 		train_samples_idx = range(0,self.training_n)
 		random.shuffle(train_samples_idx)
@@ -115,7 +115,7 @@ class Trainer:
 			if iter % self.print_every_itr == 0:
 				
 				print_iter_n = (batch_size*self.print_every_itr)
-				print iter,"\tE: %.3f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tF %.1f B %.1f I %.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
+				print iter,"\tE: %.2f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tF/B/I %.1f/%.1f/%.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
 				error = 0.0
 				scale = 0
 				time_b = 0.0
@@ -123,13 +123,18 @@ class Trainer:
 				time_btch = 0.0
 				scale = 0.0
 
-			#if iter == 15000:
-				#learning_rate = 2*learning_rate
-			#	mom = 0.75
+			if iter == 100:
+				learning_rate = 10*learning_rate
+				#batch_size = int(batch_size*0.5)
+				#mom = 0.75
 
-			if iter == 30000 or iter  == 35000:
-				learning_rate = 0.9*learning_rate
-				batch_size = batch_size*1.5
+			if iter == 5000:
+				learning_rate = 0.5*learning_rate
+				batch_size = 75
+
+			if iter == 25000 or iter  == 29000:
+				learning_rate = 0.1*learning_rate
+				#batch_size = int(batch_size*2)
 				#mom = mom+0.4
 
 			if np.isnan(error):
@@ -157,6 +162,7 @@ class Trainer:
 			#path = self.test_dir + test_sample['path']
 			input, class_n = self.test_set[i]#self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
 			input = astype(input)
+			input = self.preprocess_img(input, self.mean, self.std)
 			label = zeros(self.net.n_classes)
 			label[class_n] = 1
 
@@ -226,6 +232,7 @@ class Trainer:
 		elif self.input_from_dir:
 			input = np.transpose(input, (2,0,1))
 
+		#
 		input[0,:,:] = (input[0,:,:] - mean[0])/std[0]
 		input[1,:,:] = (input[1,:,:] - mean[1])/std[1]
 		input[2,:,:] = (input[2,:,:] - mean[2])/std[2]
