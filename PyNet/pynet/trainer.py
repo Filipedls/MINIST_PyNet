@@ -62,31 +62,38 @@ class Trainer:
 
 		self.updater = Updater(net, self.type)
 
+		self.params = config['params']
 
-	def train(self, max_iter, learning_rate, batch_size, w_decay):
+		if config.has_key('save_every_itr'):
+			self.save_iter = config['save_every_itr']
+			self.back_file_name = config['save_file_name']
+		else:
+			self.save_iter = 0
+
+
+	def train(self):
 
 		if self.training_n == 0:
 			raise ValueError("* NO TRAINING IMAGES!")
 
-		print "Training", self.training_n, "images; batch:", batch_size, "; lr:", learning_rate, "; w_decay:", w_decay
+		print "Training", self.training_n, "images; batch:", self.params['batch'][0], "; lr:", self.params['lr'][0], "; w_decay:", self.params['w_decay'][0], "; momentum:",self.params['momentum'][0]
 
 		train_samples_idx = range(0,self.training_n)
 		random.shuffle(train_samples_idx)
 
-		mom = 0.9
-
 		error = 0.0
+		btch_error = 0.0
 		epoch = 0
 		n_samples = 0
 		time_b = 0.0
 		time_f = 0.0
 		time_btch = 0.0
 		scale = 0.0
-		for iter in range(1, max_iter+1):
+		for iter in range(1, self.params['max_iter']+1):
 
 			start_btch = timer()
-			for i_batch in range(0,batch_size):
-				i = (iter * batch_size + i_batch) % self.training_n
+			for i_batch in range(0,self.params['batch'][0]):
+				i = (iter * self.params['batch'][0] + i_batch) % self.training_n
 				# Input
 				input, input_class = self.get_input(train_samples_idx[i])
 				#print "INPUT:\n",np.max(input),np.min(input)
@@ -94,7 +101,9 @@ class Trainer:
 				label[input_class] = 1
 
 				start_f = timer()
-				error += self.net.forward(input, label)
+				img_error = self.net.forward(input, label)
+				error += img_error
+				btch_error += img_error
 				time_f += timer() - start_f
 				start_b = timer()
 				self.net.backward()
@@ -103,45 +112,33 @@ class Trainer:
 				n_samples += 1
 				if i == self.training_n-1:
 					epoch += 1
+					print epoch, ' Epochs','; E:', btch_error / self.training_n
+					btch_error = 0.0
 					random.shuffle(train_samples_idx)
 
 			time_btch += timer() - start_btch
 
 			# Update the weights at the end of every batch
-			self.updater.update_weights(learning_rate/batch_size, mom, w_decay*batch_size)
+			self.updater.update_weights(self.params['lr'][0]/self.params['batch'][0], self.params['momentum'][0], self.params['w_decay'][0]*self.params['batch'][0])
 			iter_scale = self.updater.net_checks()
 			scale += iter_scale
-			
+			# Printing training stuff
 			if iter % self.print_every_itr == 0:
 				
-				print_iter_n = (batch_size*self.print_every_itr)
-				print iter,"\tE: %.2f"% (error/print_iter_n), "lr:", learning_rate,"\tN:",n_samples,"\tEp:",epoch, "\tF/B/I %.1f/%.1f/%.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
+				print_iter_n = (self.params['batch'][0]*self.print_every_itr)
+				print iter,"\tE: %.2f"% (error/print_iter_n), "lr:", self.params['lr'][0],"\tN:",n_samples, "\tF/B/I %.1f/%.1f/%.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
 				error = 0.0
 				scale = 0
 				time_b = 0.0
 				time_f = 0.0
 				time_btch = 0.0
 				scale = 0.0
+			# saving the weights
+			if self.save_iter and iter % self.save_iter == 0:
+				self.net.save_weights(self.back_file_name)
+				print "Weights saved at "+self.back_file_name
 
-			if iter == 100:
-				learning_rate = 10*learning_rate
-				#batch_size = int(batch_size*0.5)
-				#mom = 0.75
-
-			if iter == 5000:
-				learning_rate = 0.5*learning_rate
-				batch_size = 75
-
-			if iter == 25000 or iter  == 29000:
-				learning_rate = 0.1*learning_rate
-				#batch_size = int(batch_size*2)
-				#mom = mom+0.4
-
-			if np.isnan(error):
-				print "ABORTED : ERROR TO BIG!"
-				return False
-			#if iter_scale*1000 > 5:
-			#	learning_rate = 0.5*learning_rate
+			self.check_params(iter)
 
 		return True
 
@@ -179,6 +176,16 @@ class Trainer:
 
 
 		print "* TEST" ,"\tA: %.3f"%(right/float(n_samples)),"\tE: %.3f"% (error/self.test_n), "\tN:",n_samples, "\tT: %.1F ms" % (time*1000/self.test_n)
+
+	def check_params(self, train_iter):
+		for name, value in self.params.iteritems(): # for all the training parameters
+			if isinstance(value, list) and len(value) > 1: # if its not a constant parameter
+				if isinstance(value[1][0], int): # step parameter
+					for iter, parm_value in value[1:]: # checks all steps
+						if iter == train_iter: # and if one of the iter matches
+							value[0] = value[0]*parm_value # multiplies the current value with it
+				else:
+					print "* check_params: unknown parameter!"
 
 
 	def get_dataset_mean_std(self):
