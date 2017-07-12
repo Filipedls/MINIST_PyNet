@@ -1,11 +1,11 @@
 from net import *
 from trainer import *
-from helpers import *
-import numpy as np
-import cv2
-import math
-import random
 
+# A one epoch run on MINST with about 98% accuracy
+
+weights_f_name = 'weights_back_MNIST.pickle'
+
+load_weights_from_file = True
 
 config = {
 	'train_set' : "../../mnist_png/train.txt",
@@ -13,7 +13,15 @@ config = {
 	'test_set' : "../../mnist_png/test.txt",
 	'test_dir' : "../../mnist_png/testing/",
 	'ds_mean_std' : [[33.32],[76.83]],
-	'print_every_itr': 1
+	'print_every_itr': 100,
+	'type' : "momentum",
+	'params' : {
+		'lr' : [0.0003, [100, 10.0], [1000, 0.5], [2000, 0.5], [3250,0.1]], # starting_value,...,[iter,multiplier],...
+		'batch': [16],
+		'w_decay' : [0.000001],
+		'momentum' : [0.9],
+		'max_iter' : 3750
+	},
 
 }
 
@@ -26,16 +34,13 @@ net_def_basic =  [['input', 1, 20, 20],
 
 
 net_def =  [['input', 1, 28, 28],
-			['conv', 3, 32, 0, 1],
-			['conv', 3, 64, 0, 1],
+			['conv', 3, 8, 0, 1],
+			['conv', 3, 8, 0, 1],
 			['maxpool', 2, 2],
-			['conv', 3, 128, 0, 1],
-			['conv', 3, 256, 0, 1],
-			['conv', 3, 512, 0, 1],
+			['conv', 3, 16, 0, 1],
+			['conv', 3, 16, 0, 1],
 			['maxpool', 2, 2],
-			['fc', 2048, 'lerelu'],
-			['fc', 1024, 'lerelu'],
-			['fc', 256, 'lerelu'],
+			['fc', 64, 'lerelu'],
 			['fc', 10, 'softmax'],
 			['error','l1']
 		   ]
@@ -43,13 +48,15 @@ net_def =  [['input', 1, 28, 28],
 
 net = Net(net_def)
 
+if load_weights_from_file:
+	net.load_weights(weights_f_name)
+
 trainer = Trainer(net, config)
 
-num_iter = 10
-trainer.train( num_iter, 0.0005, 16)
-
-trainer.test()
-
-
-#print "CHECKS 1: input: \n", net.layers[9].input, "; d_input: \n", net.layers[9].output_error
-#print "CHECKS 2: input: ", net.layers[8].weights[0,:,:,:], "; d_input: ", net.layers[8].d_weights[0,:,:,:] 
+if load_weights_from_file:
+	trainer.test()
+elif trainer.train():
+	net.save_weights(weights_f_name)
+	trainer.test()
+else:
+	print "Train was not sucessful... :("

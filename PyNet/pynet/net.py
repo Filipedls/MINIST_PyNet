@@ -10,6 +10,9 @@ import pickle
 class Net:
 
 	def __init__( self, layers_def):
+		"""
+		Network initialization, trough the layers_def
+		"""
 		print "=> NET:"
 		self.layers = []
 		for layer_def in layers_def:
@@ -33,32 +36,38 @@ class Net:
 				raise ValueError("*** UNKOWN LAYER TYPE ("+layer_def[0]+")")
 			self.layers.append(layer)
 
-		self.n_classes = input_size
+		self.n_classes = int(input_size[0])
+		self.layers_def = layers_def
 		print "* NET: done initializing net!"
 
 	def forward(self, input, ground_true):
+		"""
+		The Forward pass of the net
+		"""
 		layer_input = input
-		#print "F times:"
 		for layer in self.layers:
 			start = timer()
 			if layer.type == 'error':
 				layer_input = layer.forward(layer_input, ground_true)
 			else:
 				layer_input = layer.forward(layer_input)
-			#print layer.type+" %.2f ms"%((timer() - start)*1000)
 		return layer_input
 
 	def backward(self):
-		#print "B times:"
+		"""
+		The Backward pass of the net
+		"""
 		for layer in reversed(self.layers):
 			start = timer()
 			if layer.type == 'error':
 				d_output_error = layer.backward()
 			else:
 				d_output_error = layer.backward(d_output_error)
-			#print layer.type+" %.2f ms"%((timer() - start)*1000)
 
 	def save_weights(self, file_path):
+		"""
+		Saves the weights to a pickle file
+		"""
 		weights = []
 		for layer in self.layers:
 			if layer.has_weights:
@@ -69,9 +78,13 @@ class Net:
 		    pickle.dump(weights, f)
 
 	def load_weights(self, file_path):
+		"""
+		Loads the weights from a pickle file
+		(make sure thats the same net, i dont really check that)
+		"""
 
 		# Getting back the weights
-		with open(file_path) as f:  # Python 3: open(..., 'rb')
+		with open(file_path) as f:
 		    weights = pickle.load(f)
 
 		weights_i = iter(weights)
@@ -85,8 +98,23 @@ class Net:
 					except StopIteration:
 						pass
 				else:
-					print "* load_weights: shape doesn't match - net_w:", layer.weights.shape, "load_w:",weights[i].shape
+					print "* load_weights: shape doesn't match - net_w:", layer.weights.shape, "load_w:",l_weight.shape
 
+	def check_weights(self, n):
+		"""
+		return the weights of the n layer of the net, while checking 
+		its min and max and normalizing it, to visulization
+		"""
+		layer = self.layers[n]
+		#for layer in self.layers:
+		if layer.type == 'convolution':
+			weights = layer.weights.reshape((layer.n_filters,)+layer.kern_size)
+			weights = weights.transpose((1,2,0,3)).reshape(layer.kern_size[0],layer.kern_size[1],layer.kern_size[2]*layer.n_filters)
+			w_min = np.min(weights)
+			w_max = np.max(weights)
+			weights = (weights - w_min)/(w_max-w_min)
+			print 'Max:', w_max, 'MIN:', w_min
 
+		return weights
 
 	#def __del__(self):

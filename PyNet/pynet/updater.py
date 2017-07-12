@@ -20,7 +20,8 @@ class Updater:
 
 		self.net = net
 
-	def udpate_mom(self, lr, mu, w_decay):
+	def udpate_mom(self, params):
+		lr, mu, w_decay = params['lr'][0]/params['batch'][0], params['momentum'][0], params['w_decay'][0]*params['batch'][0]
 		i = 0
 		for layer in self.net.layers:
 			if layer.has_weights:
@@ -37,7 +38,8 @@ class Updater:
 
 
 
-	def udpate_sgd(self, lr, mu, w_decay):
+	def udpate_sgd(self, params):
+		lr = params['lr'][0]/params['batch'][0]
 		i = 0
 		for layer in self.net.layers:
 			if layer.has_weights:
@@ -54,6 +56,9 @@ class Updater:
 
 
 	def net_checks(self):
+		"""
+		Checks the scale between weights and updates in a net, should be around 1e-3.
+		"""
 
 		scale = 0
 		n = 0

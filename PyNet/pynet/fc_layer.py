@@ -31,11 +31,13 @@ class FCLayer(Layer):
 	# TODO: optimize
 	def forward(self, input):
 		if self.do_reshape:
-			input = input.flatten()
+			input = input.reshape(input.shape[0], self.input_size)#flatten()
 
-		if input.shape != self.input_size:
+		if input.shape[1] != self.input_size:
 			raise ValueError("WRONG INPUT SHAPE: " + str(input.shape) + "; weights_shape: "+str(self.input_size))
 
+
+		#print "weights:\n", self.weights, "input:\n", input
 		z = np.dot(input, self.weights) + self.bias
 		output = self.act.activate(z)
 
@@ -49,12 +51,13 @@ class FCLayer(Layer):
 
 	def backward(self, d_output_error):
 
-		d_x_output = self.act.diff(d_output_error)#self.act_map * d_output_error#ReLU_derivative(d_output_error)
+		d_x_output = self.act.diff(d_output_error)
 
-		d_input = np.dot(self.weights, np.transpose(d_x_output))
+		d_input = np.dot(d_x_output, self.weights.T)
 		
-		self.d_weights += np.outer(self.input, d_x_output)#np.dot(np.transpose(self.input), d_x_output)
-		self.d_bias += d_x_output
+		self.d_weights += np.dot(self.input.T, d_x_output)#np.outer(self.input, d_x_output)#
+
+		self.d_bias += d_x_output.sum(axis=0)
 
 		#for n in range(0, self.n_neurons):
 		#	weights = self.weights[n,:] 
@@ -63,20 +66,10 @@ class FCLayer(Layer):
 		#	self.d_bias[n] = d_x_output[n]
 
 		if self.do_reshape:
-			d_input = d_input.reshape(self.input_shape)
+			d_input = d_input.reshape((d_output_error.shape[0],)+self.input_shape)
 
 		#self.d_input = d_input
 		return d_input
-
-	def update_weights(self, learning_rate):
-
-		self.weights -= self.d_weights * learning_rate
-		self.bias -= self.d_bias * learning_rate
-		self.d_weights = zeros(self.weights.shape)
-		self.d_bias = zeros(self.bias.shape)
-		#self.weights[self.weights > 1] = 1
-		#self.weights[self.weights < -1] = -1
-		return True
 
 	def __del__(self):
 		class_name = self.__class__.__name__

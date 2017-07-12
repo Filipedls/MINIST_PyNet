@@ -10,4 +10,10 @@ Neural Nets framework in Python, from scratch
 
 CIFAR-10
 
-download: wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+1. download cifar-10: wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+
+2. Extract it in the root
+
+3. cd PyNet/pynet/
+
+4. Run "python test_cifar.py"

@@ -59,10 +59,6 @@ def get_cifar_10(ds_type):
 			if class_count[label_n] <= class_lim:
 				dataset.append((img,label_n))
 			
-
-
 	print len(dataset)," cifar images found"
-
-	print "\n> EX.: \n", dataset[0][0].shape
 
 	return dataset

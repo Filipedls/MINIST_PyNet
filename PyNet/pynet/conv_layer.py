@@ -29,17 +29,17 @@ class ConvLayer(Layer):
 
 	# TODO: optimize
 	def forward(self, input):
-		if input.shape[0] != self.kern_size[0]:
+		if input.shape[1] != self.kern_size[0]:
 			raise ValueError("WRONG INPUT SHAPE: " + str(input.shape) + "; Kern_shape: "+str(self.kern_size))
 
 		if self.padding > 0:
-			npad = ((0, 0), (self.padding, self.padding), (self.padding, self.padding))
+			npad = ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding))
 			input = np.pad(input, pad_width=npad, mode='constant', constant_values=0)
 		
 		#output = np.zeros(self.output_shape)
-		input_exp = np.expand_dims(input, axis=0)
-		vec_input = im2col_cython(input_exp, self.kern_size[1], self.kern_size[2], self.stride, self.output_shape[1], self.output_shape[2])
-
+		#input_exp = np.expand_dims(input, axis=0)
+		vec_input = im2col_cython(input, self.kern_size[1], self.kern_size[2], self.stride, self.output_shape[1], self.output_shape[2])
+		#print "vec_input:\n", vec_input[0:10,:], "\ninput:\n", input
 		# vec_input = empty((self.output_shape[1]*self.output_shape[2],self.input_size))
 
 		# i = 0
@@ -59,7 +59,13 @@ class ConvLayer(Layer):
 
 		output_vec = np.dot(vec_input, self.weights) + self.bias
 
-		output = np.reshape(output_vec.transpose(),self.output_shape)
+		# Split the output by images, to then reshape it correctly
+		output_vec = output_vec.reshape((-1,self.output_shape[1]*self.output_shape[2],self.output_shape[0])).transpose(0,2,1)
+
+		#print "weights:\n", self.weights, "\nout_vec:\n", output_vec.shape
+
+
+		output = np.reshape(output_vec,(input.shape[0],)+self.output_shape) # check this!!!!
 
 		output = self.act.activate(output)
 
@@ -73,20 +79,22 @@ class ConvLayer(Layer):
 
 		d_x_output = self.act.diff(d_output_error)#d_x_output = LeReLU_derivative(d_output_error)
 
-		self.d_bias += np.sum(d_x_output, axis=( 1, 2))
+		self.d_bias += np.sum(d_x_output, axis=(0, 2, 3))
 
-		d_x_output_vec = d_x_output.transpose(1, 2, 0).reshape(self.n_filters, -1)
+		d_x_output_vec = d_x_output.transpose(0, 2, 3, 1).reshape(-1,self.n_filters).T
 
-		#print "out vec: ", d_x_output_vec.shape, " - in vec: " , self.input_vec.shape
+		#print "out vec: \n", d_x_output_vec, "\ninput_vec\n", self.input_vec
 
-		self.d_weights += d_x_output_vec.dot(self.input_vec).reshape(self.weights.shape)
+		self.d_weights += d_x_output_vec.dot(self.input_vec).T#reshape(self.weights.shape)
 
-		d_input_vec = np.dot(self.weights, d_x_output_vec)
+		d_input_vec = np.dot(self.weights, d_x_output_vec).T
 
-		d_input = col2im_cython(d_input_vec.T, 1, self.input_shape[0],self.input_shape[1] , self.input_shape[2], 
+		#print "d_input_vec:\n", d_input_vec
+
+		d_input = col2im_cython(d_input_vec, self.input_shape[0], self.input_shape[1],self.input_shape[2] , self.input_shape[3], 
 			self.kern_size[1], self.kern_size[2], self.stride, self.output_shape[1], self.output_shape[2])
 
-		d_input = np.squeeze(d_input, axis=0)
+		#d_input = np.squeeze(d_input, axis=0)
 
 		# i = 0
 		# for x_start in range(0,d_output_error.shape[1]):
@@ -113,17 +121,8 @@ class ConvLayer(Layer):
 		#print "D IP SHAPE: " + str(d_input.shape)
 		#self.d_input = d_input
 		if self.padding > 0:
-			return d_input[ :, self.padding:-self.padding, self.padding:-self.padding]
+			return d_input[:, :, self.padding:-self.padding, self.padding:-self.padding]
 		return d_input
-
-	def update_weights(self, learning_rate):
-		self.weights -= self.d_weights * learning_rate
-		self.bias -= self.d_bias * learning_rate
-		self.d_weights = zeros(self.weights.shape)
-		self.d_bias = zeros(self.bias.shape)
-		#self.weights[self.weights > 1] = 1
-		#self.weights[self.weights < -1] = -1
-		return True
 
 	def __del__(self):
 		class_name = self.__class__.__name__

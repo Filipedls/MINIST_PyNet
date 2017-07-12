@@ -8,7 +8,9 @@ from timeit import default_timer as timer
 class Trainer:
 
 	def __init__( self, net, config):
-		#print "* TRAINER CONFIG: ", config
+		"""
+		Initializes a Trainer, to train a net
+		"""
 
 		self.net = net
 
@@ -72,12 +74,15 @@ class Trainer:
 
 
 	def train(self):
+		"""
+		Trains a net with the parameters initialized
+		"""
 
 		if self.training_n == 0:
 			raise ValueError("* NO TRAINING IMAGES!")
 
 		print "Training", self.training_n, "images; batch:", self.params['batch'][0], "; lr:", self.params['lr'][0], "; w_decay:", self.params['w_decay'][0], "; momentum:",self.params['momentum'][0]
-
+		# First shufle of the training data
 		train_samples_idx = range(0,self.training_n)
 		random.shuffle(train_samples_idx)
 
@@ -87,51 +92,45 @@ class Trainer:
 		n_samples = 0
 		time_b = 0.0
 		time_f = 0.0
-		time_btch = 0.0
 		scale = 0.0
 		for iter in range(1, self.params['max_iter']+1):
+			inputs = empty((self.params['batch'][0],)+self.net.input_size)
+			labels = zeros((self.params['batch'][0],self.net.n_classes))
 
-			start_btch = timer()
 			for i_batch in range(0,self.params['batch'][0]):
-				i = (iter * self.params['batch'][0] + i_batch) % self.training_n
+				i = ((iter-1) * self.params['batch'][0] + i_batch) % self.training_n
 				# Input
-				input, input_class = self.get_input(train_samples_idx[i])
-				#print "INPUT:\n",np.max(input),np.min(input)
-				label = zeros(self.net.n_classes)
-				label[input_class] = 1
-
-				start_f = timer()
-				img_error = self.net.forward(input, label)
-				error += img_error
-				btch_error += img_error
-				time_f += timer() - start_f
-				start_b = timer()
-				self.net.backward()
-				time_b += timer() - start_b
+				input, input_class = self.get_input(train_samples_idx[i], 'train')
+				
+				labels[i_batch,input_class] = 1
+				inputs[i_batch,:,:,:] = input
 
 				n_samples += 1
 				if i == self.training_n-1:
 					epoch += 1
-					print epoch, ' Epochs','; E:', btch_error / self.training_n
+					print epoch, ' Epochs','; E:', (btch_error / self.training_n)
 					btch_error = 0.0
 					random.shuffle(train_samples_idx)
 
-			time_btch += timer() - start_btch
+			start_f = timer()
+			iter_error = self.net.forward(inputs, labels)
+			error += iter_error
+			btch_error += iter_error
+			time_f += timer() - start_f
+			start_b = timer()
+			self.net.backward()
+			time_b += timer() - start_b
 
 			# Update the weights at the end of every batch
-			self.updater.update_weights(self.params['lr'][0]/self.params['batch'][0], self.params['momentum'][0], self.params['w_decay'][0]*self.params['batch'][0])
-			iter_scale = self.updater.net_checks()
-			scale += iter_scale
+			self.updater.update_weights(self.params)
+			scale += self.updater.net_checks()
 			# Printing training stuff
 			if iter % self.print_every_itr == 0:
-				
-				print_iter_n = (self.params['batch'][0]*self.print_every_itr)
-				print iter,"\tE: %.2f"% (error/print_iter_n), "lr:", self.params['lr'][0],"\tN:",n_samples, "\tF/B/I %.1f/%.1f/%.1f (ms)" % (time_f*1000/print_iter_n, time_b*1000/print_iter_n, time_btch*1000/self.print_every_itr)," (%.2f"%(scale*1000/self.print_every_itr),")"
+				print_iter_n = self.params['batch'][0]*self.print_every_itr
+				print iter,"\tE: %.2f"% (error/print_iter_n), "lr:", self.params['lr'][0],"\tN:",n_samples, "\tF/B %.1f/%.1f (ms)" % (time_f*1000/self.print_every_itr, time_b*1000/self.print_every_itr),"(%.2f"%(scale*1000/self.print_every_itr)+")"
 				error = 0.0
-				scale = 0
 				time_b = 0.0
 				time_f = 0.0
-				time_btch = 0.0
 				scale = 0.0
 			# saving the weights
 			if self.save_iter and iter % self.save_iter == 0:
@@ -143,6 +142,9 @@ class Trainer:
 		return True
 
 	def test(self):
+		"""
+		Tests a net...
+		"""
 
 		print "Testing ", self.test_n, " images"
 
@@ -157,11 +159,10 @@ class Trainer:
 
 			#test_sample = self.test_set[i]
 			#path = self.test_dir + test_sample['path']
-			input, class_n = self.test_set[i]#self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
-			input = astype(input)
-			input = self.preprocess_img(input, self.mean, self.std)
-			label = zeros(self.net.n_classes)
-			label[class_n] = 1
+			input, class_n = self.get_input(i, 'test')
+			input = np.expand_dims(input, axis=0) # batch like format
+			label = zeros((1,self.net.n_classes))
+			label[0,class_n] = 1
 
 			start = timer()
 			error += self.net.forward(input, label)
@@ -178,6 +179,9 @@ class Trainer:
 		print "* TEST" ,"\tA: %.3f"%(right/float(n_samples)),"\tE: %.3f"% (error/self.test_n), "\tN:",n_samples, "\tT: %.1F ms" % (time*1000/self.test_n)
 
 	def check_params(self, train_iter):
+		"""
+		Checks and, if needed, updates the training parameters
+		"""
 		for name, value in self.params.iteritems(): # for all the training parameters
 			if isinstance(value, list) and len(value) > 1: # if its not a constant parameter
 				if isinstance(value[1][0], int): # step parameter
@@ -189,6 +193,9 @@ class Trainer:
 
 
 	def get_dataset_mean_std(self):
+		"""
+		Checks and, if needed, updates the training parameters
+		"""
 
 		input, cls = self.get_input(0)#, cv2.IMREAD_GRAYSCALE)
 		print input.shape
@@ -212,37 +219,48 @@ class Trainer:
 		print "* Dataset mean: ", mean, "; std: ", std
 		return mean, std
 
-	def get_input(self, train_sample_idx):
-		if self.input_from_dir:
-			train_sample = self.training_set[train_sample_idx]
-			path = self.training_dir + train_sample['path']
-			input = self.preprocess_img(self.get_img_from_dir(path), self.mean, self.std)
-			input_class = train_sample['class']
-		else:
-			input_raw = astype(self.training_set[train_sample_idx][0])
-			input = self.preprocess_img(input_raw, self.mean, self.std)
-			input_class =  self.training_set[train_sample_idx][1]
+	def get_input(self, sample_idx, from_set):
 
-		input = astype(input)
+		if from_set == 'train':
+			input_set = self.training_set
+			if self.input_from_dir:
+				set_dir = self.training_dir
+		elif from_set == 'test':
+			input_set = self.test_set
+			if self.input_from_dir:
+				set_dir = self.test_dir
+		else:
+			print '* get_input(): DONT KNOW THAT SET!'
+
+		if self.input_from_dir:
+			input_sample = input_set[sample_idx]
+			path = set_dir + input_sample['path']
+			input_raw = self.get_img_from_dir(path)
+			input_class = input_sample['class']
+		else:
+			input_raw = self.training_set[sample_idx][0]
+			input_class =  self.training_set[sample_idx][1]
+
+		input_raw = astype(input_raw)
+		input = self.preprocess_img(input_raw, self.mean, self.std)
 		return input, input_class
 
 	def get_img_from_dir(self, path):
-		return cv2.imread(path, 4)
+		input = cv2.imread(path, 4)
+
+		if len(input.shape) == 2:
+			input = np.expand_dims(input, axis=0)
+		else:
+			input = input.transpose((2,0,1)) # numpy style, chanels as the 0th axis
+		return input
 
 	def preprocess_img(self, input, mean, std):
 
 		if input.shape[1:3] != self.net.input_size[1:3]:
 			input = cv2.resize(input, tuple(self.net.input_size[1:3]), interpolation=cv2.INTER_AREA)
-		
-		if self.net.input_size[0] == 1:#len(input.shape) == 2:
-			input = np.expand_dims(input, axis=0)
-		elif self.input_from_dir:
-			input = np.transpose(input, (2,0,1))
 
-		#
-		input[0,:,:] = (input[0,:,:] - mean[0])/std[0]
-		input[1,:,:] = (input[1,:,:] - mean[1])/std[1]
-		input[2,:,:] = (input[2,:,:] - mean[2])/std[2]
+		for i in range(self.net.input_size[0]):
+			input[i,:,:] = (input[i,:,:] - mean[i])/std[i]
 
 		#input = input/(255.0/2.0) - 1.0
 

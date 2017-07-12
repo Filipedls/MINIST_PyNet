@@ -1,8 +1,9 @@
 import numpy as np
+from helpers import *
 
 class Activation:
 
-	LeRelU_slope = 0.01
+	LeRelU_slope = astype(np.array(0.01))
 
 	def __init__( self, type):
 
@@ -40,15 +41,12 @@ class Activation:
 
 	def LeReLU( self, x):
 		out = x
-		try:
-			self.diff_mat = out < 0
-		except Warning:
-			print self.diff_mat
+		self.diff_mat = out < 0
 		out[self.diff_mat] = self.LeRelU_slope*x[self.diff_mat]
 		return out
 
 	def LeReLU_derivative( self, d_x):
-		d_in = d_x.astype(np.float64)
+		d_in = astype(d_x)
 		#print "slope: ",self.LeRelU_slope, "DIN_: ", d_in
 		d_in[self.diff_mat] = self.LeRelU_slope * d_in[self.diff_mat]
 		return d_in
@@ -60,9 +58,9 @@ class Activation:
 		return x * (1.0 - d_x)
 
 	def softmax( self, x):
-		x = x - np.max(x)
+		x = x - np.max(x, axis=1).reshape((-1,1))
 		x = np.exp(x)
-		x = x/np.sum(x)
+		x = x/np.sum(x, axis=1).reshape((-1,1))
 		return x
 
 	def softmax_derivative( self, d_x):

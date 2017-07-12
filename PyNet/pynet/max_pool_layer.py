@@ -21,9 +21,9 @@ class MaxPoolLayer(Layer):
 
 	# TODO: optimize
 	def forward(self, input):
-
+		N = input.shape[0]
 		# Inserts another dimesion so that we can use im2col, once we dont wanna merge all the channels
-		input = input.reshape( np.insert(input.shape,1,1) )
+		input = input.reshape( (N*input.shape[1],1)+input.shape[2:4] )
 
 		vec_input = im2col_cython(input, self.kern_size[0], self.kern_size[1], self.stride, self.output_shape[1], self.output_shape[2])
 
@@ -31,7 +31,7 @@ class MaxPoolLayer(Layer):
 		
  		self.vec_input_argmax = np.argmax(vec_input,axis=1)
 
-		output = vec_input[range(vec_input.shape[0]),self.vec_input_argmax].reshape( self.output_shape)
+		output = vec_input[range(vec_input.shape[0]),self.vec_input_argmax].reshape( (N,)+self.output_shape)
 
 		# for x_out in range(0,self.output_shape[1])from im2col_cy import *:
 		# 	x_start = x_out*self.stride
@@ -54,14 +54,16 @@ class MaxPoolLayer(Layer):
 
 	def backward(self, d_output_error):
 
+		N = d_output_error.shape[0]
+
 		d_input = zeros(self.vec_input_shape)
 
 		d_input[range(d_input.shape[0]),self.vec_input_argmax] = d_output_error.flatten()
 
-		d_input = col2im_cython(d_input, self.input_shape[0],1,self.input_shape[1] , self.input_shape[2], 
+		d_input = col2im_cython(d_input, N*self.input_shape[0],1,self.input_shape[1] , self.input_shape[2], 
 			self.kern_size[0], self.kern_size[1], self.stride, self.output_shape[1], self.output_shape[2])
 
-		d_input = np.squeeze(d_input, axis=1)
+		d_input = d_input.reshape((N,)+self.input_shape)#squeeze(d_input, axis=1)
 		# for x_start in range(0,d_output_error.shape[1]):
 		# 	x_inp = x_start * self.stride
 

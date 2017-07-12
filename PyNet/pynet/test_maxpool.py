@@ -20,9 +20,11 @@ input = astype(np.array([[[1, 0, 1, 0],
 						 ]
 						 ]))
 
+input = np.expand_dims(input, axis=0).repeat(2,axis=0)
 
-print "IN: \n", input, "\nOUT: \n", layer.forward(input)
+output = layer.forward(input)
+print "IN: \n", input, "\nOUT: \n", output
 
-diff = np.ones((2,2,2))
+diff = np.ones(output.shape)
 
 print "\nDIFF: \n", diff, "\nOUT: \n", layer.backward(diff)
