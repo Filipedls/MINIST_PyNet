@@ -68,6 +68,7 @@ class Net:
 		"""
 		Saves the weights to a pickle file
 		"""
+		print "* NET: Saving my weights! (to: "+file_path+")"
 		weights = []
 		for layer in self.layers:
 			if layer.has_weights:
@@ -76,16 +77,18 @@ class Net:
 		# Saving the weights
 		with open(file_path, 'w') as f:
 		    pickle.dump(weights, f)
+		    #np.save(f, weights, allow_pickle=False)
 
 	def load_weights(self, file_path):
 		"""
 		Loads the weights from a pickle file
 		(make sure thats the same net, i dont really check that)
 		"""
-
+		print "* NET: Loading my weights! (from: "+file_path+")"
 		# Getting back the weights
 		with open(file_path) as f:
 		    weights = pickle.load(f)
+		    #weights = np.load(f)
 
 		weights_i = iter(weights)
 		l_weight = next(weights_i)

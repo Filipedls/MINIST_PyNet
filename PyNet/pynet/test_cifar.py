@@ -12,21 +12,21 @@ cifar_ds = get_cifar_10('train')
 
 cifar_ds_test = get_cifar_10('test')
 
-weights_f_name = 'weights_back_cifar.pickle'
+weights_f_name = 'weights_back_cifar_np.pickle'
 load_weights_from_file = True
 
 config = {
 	'train_set' : cifar_ds,
 	'test_set' : cifar_ds_test,
-	'ds_mean_std' : [[ 125.30691, 122.95039, 113.865383, [ 51.56153, 50.82543, 51.22018]],
+	'ds_mean_std' : [[ 125.30691, 122.95039, 113.865383], [ 51.56153, 50.82543, 51.22018]],
 	'print_every_itr': 100,
 	'type' : "momentum",
 	'params' : {
-		'lr' : [0.0003, [100, 10.0], [1000,0.5], [4000, 0.5], [20000, 0.5], [29000,0.1]], # starting_value,...,[iter,multiplier],...
+		'lr' : [0.0003, [100, 10.0], [1000,0.5], [4000, 0.5], [10000, 0.5], [19000,0.1]], # starting_value,...,[iter,multiplier],...
 		'batch': [32],
 		'w_decay' : [0.000001],
 		'momentum' : [0.9],
-		'max_iter' : 5000
+		'max_iter' : 20000
 	},
 
 	'save_every_itr': 2000,
