@@ -8,7 +8,7 @@ Neural Nets framework in Python, from scratch
 3. Run "python test.py"
 
 
-CIFAR-10
+## CIFAR-10
 
 1. download cifar-10: wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
 
@@ -17,3 +17,15 @@ CIFAR-10
 3. cd PyNet/pynet/
 
 4. Run "python test_cifar.py"
+
+
+## NOTES
+
+The default run will load the saved weights and test the net.
+If you want to train it yourself, change
+
+load_weights_from_file = True 
+to
+load_weights_from_file = False
+
+in the test files

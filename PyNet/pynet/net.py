@@ -68,16 +68,21 @@ class Net:
 		"""
 		Saves the weights to a pickle file
 		"""
-		print "* NET: Saving my weights! (to: "+file_path+")"
-		weights = []
+		
+		weights = empty([0])
 		for layer in self.layers:
 			if layer.has_weights:
-				weights.append(layer.weights)
+				weights = np.append(weights, layer.weights.ravel())
+				weights = np.append(weights, layer.bias.ravel())
 
 		# Saving the weights
 		with open(file_path, 'w') as f:
-		    pickle.dump(weights, f)
-		    #np.save(f, weights, allow_pickle=False)
+		    #pickle.dump(weights, f)
+		    np.save(f, weights, allow_pickle=False)
+
+		#weights.tofile(file_path)
+
+		print "* NET: Saved my weights! (to: "+file_path+", " + "%.3f mb)"%(len(weights)*8.0/1000000.0)
 
 	def load_weights(self, file_path):
 		"""
@@ -87,21 +92,23 @@ class Net:
 		print "* NET: Loading my weights! (from: "+file_path+")"
 		# Getting back the weights
 		with open(file_path) as f:
-		    weights = pickle.load(f)
-		    #weights = np.load(f)
+		    #weights = pickle.load(f)
+		    weights = np.load(f)
 
-		weights_i = iter(weights)
-		l_weight = next(weights_i)
+		#weights = np.fromfile(file_path, dtype=np.float64)
+
+		p = 0
 		for layer in self.layers:
 			if layer.has_weights:
-				if layer.weights.shape == l_weight.shape:
-					layer.weights = l_weight
-					try:
-						l_weight = next(weights_i)
-					except StopIteration:
-						pass
-				else:
-					print "* load_weights: shape doesn't match - net_w:", layer.weights.shape, "load_w:",l_weight.shape
+				n = np.prod(layer.weights.shape)
+				l_weights = weights[p:p+n]
+				layer.weights = l_weights.reshape(layer.weights.shape)
+				p += n
+				nb = np.prod(layer.bias.shape)
+				l_bias = weights[p:p+nb]
+				layer.bias = l_bias.reshape(layer.bias.shape)
+				p += nb
+
 
 	def check_weights(self, n):
 		"""

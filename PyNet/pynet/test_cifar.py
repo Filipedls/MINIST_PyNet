@@ -2,8 +2,7 @@ import numpy as np
 from get_cifar import *
 import cv2
 
-# A quick 3 epochs run on cifar-10 with about 70% accuracy
-# If you load the weights you only get 50%... probably some lost of precision while saving them
+# A quick 6 epochs run on cifar-10 with about 80% accuracy
 
 #import mkl
 #mkl.set_num_threads(2)
@@ -12,7 +11,7 @@ cifar_ds = get_cifar_10('train')
 
 cifar_ds_test = get_cifar_10('test')
 
-weights_f_name = 'weights_back_cifar_np.pickle'
+weights_f_name = 'weights_back_cifar.weights'
 load_weights_from_file = True
 
 config = {
@@ -23,7 +22,7 @@ config = {
 	'type' : "momentum",
 	'params' : {
 		'lr' : [0.0003, [100, 10.0], [1000,0.5], [4000, 0.5], [10000, 0.5], [19000,0.1]], # starting_value,...,[iter,multiplier],...
-		'batch': [32],
+		'batch': [16],
 		'w_decay' : [0.000001],
 		'momentum' : [0.9],
 		'max_iter' : 20000
@@ -57,7 +56,7 @@ trainer = Trainer(net, config)
 if load_weights_from_file:
 	trainer.test()
 elif trainer.train():
-	net.save_weights(weights_f_name)
+	trainer.net.save_weights(weights_f_name)
 	trainer.test()
 else:
 	print "Train was not sucessful... :("

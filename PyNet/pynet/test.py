@@ -3,7 +3,7 @@ from trainer import *
 
 # A one epoch run on MINST with about 98% accuracy
 
-weights_f_name = 'weights_back_MNIST.pickle'
+weights_f_name = 'weights_back_MNIST.weights'
 
 load_weights_from_file = True
 
