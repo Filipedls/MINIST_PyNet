@@ -1,14 +1,11 @@
-from net import *
-from helpers import *
+from context import pynet
 import numpy as np
 import cv2
 import math
 import random
 
-from activation import *
 
-
-act = Activation('lerelu')
+act = pynet.Activation('lerelu')
 
 
 var = np.array([[-0.1, 0.1], [0.1, -0.1]])

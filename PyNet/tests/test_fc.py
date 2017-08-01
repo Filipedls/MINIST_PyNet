@@ -1,5 +1,4 @@
-from fc_layer import *
-from helpers import *
+from context import pynet
 import numpy as np
 import cv2
 import math
@@ -7,7 +6,7 @@ import random
 
 
 
-input = astype(np.array([[[1, 0], 
+input = pynet.astype(np.array([[[1, 0], 
 						  [0, 0]
 						 ],
 						 [[0, 0], 
@@ -17,7 +16,7 @@ input = astype(np.array([[[1, 0],
 
 input = np.expand_dims(input, axis=0).repeat(3,axis=0)
 
-layer = FCLayer( input.shape[1:], 2,'lerelu')
+layer = pynet.FCLayer( input.shape[1:], 2,'lerelu')
 
 layer.weights = np.ones(layer.weights.shape)
 layer.weights[:,1] = 2
@@ -27,7 +26,7 @@ output = layer.forward(input)
 print "IN: \n", input, "\nOUT: \n", output
 
 
-diff = astype(np.array([[1, 0],[1,1],[0,1]]))
+diff = pynet.astype(np.array([[1, 0],[1,1],[0,1]]))
 #diff = np.expand_dims(diff, axis=0).repeat(3,axis=0)
 #diff = np.ones(output.shape)
 

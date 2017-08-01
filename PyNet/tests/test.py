@@ -1,5 +1,7 @@
-from net import *
-from trainer import *
+#from net import *
+#from trainer import *
+
+from context import pynet
 
 # A one epoch run on MINST with about 98% accuracy
 
@@ -46,12 +48,12 @@ net_def =  [['input', 1, 28, 28],
 		   ]
 
 
-net = Net(net_def)
+net = pynet.Net(net_def)
 
 if load_weights_from_file:
 	net.load_weights(weights_f_name)
 
-trainer = Trainer(net, config)
+trainer = pynet.Trainer(net, config)
 
 if load_weights_from_file:
 	trainer.test()

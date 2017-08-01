@@ -1,8 +1,4 @@
-from net import *
-from trainer import *
-from helpers import *
 import numpy as np
-import cv2
 
 batches_dir = '../../cifar-10-batches-py/'
 

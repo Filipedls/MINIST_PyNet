@@ -1,5 +1,4 @@
-from conv_layer import *
-from helpers import *
+from context import pynet
 import numpy as np
 import cv2
 import math
@@ -7,7 +6,7 @@ import random
 
 
 
-input = astype(np.array([[[1, 0, 1, 0], 
+input = pynet.astype(np.array([[[1, 0, 1, 0], 
 						  [0, 0, 0, 0],
 						  [1, 0, 1, 0],
 						  [0, 0, 0, 0],
@@ -20,7 +19,7 @@ input = astype(np.array([[[1, 0, 1, 0],
 						 ]))
 input = np.expand_dims(input, axis=0).repeat(3,axis=0)
 
-layer = ConvLayer( input.shape[1:], 2, (3,3), 0, 1)
+layer = pynet.ConvLayer( input.shape[1:], 2, (3,3), 0, 1)
 
 layer.weights[:,0] = np.ones(layer.input_size)
 layer.weights[:,1] = np.ones(layer.input_size)*2
@@ -30,7 +29,7 @@ output = layer.forward(input)
 print "IN: \n", input, "\nOUT: \n", output
 
 
-diff = astype(np.array([[[1, 0], 
+diff = pynet.astype(np.array([[[1, 0], 
 						  [0, 0],
 						 ],
 						 [[0, 0], 

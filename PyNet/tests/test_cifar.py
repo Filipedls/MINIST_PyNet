@@ -2,6 +2,8 @@ import numpy as np
 from get_cifar import *
 import cv2
 
+from context import pynet
+
 # A quick 6 epochs run on cifar-10 with about 80% accuracy
 
 #import mkl
@@ -46,12 +48,12 @@ net_def =  [['input', 3, 32, 32],
 		   ]
 
 
-net = Net(net_def)
+net = pynet.Net(net_def)
 
 if load_weights_from_file:
 	net.load_weights(weights_f_name)
 
-trainer = Trainer(net, config)
+trainer = pynet.Trainer(net, config)
 
 if load_weights_from_file:
 	trainer.test()

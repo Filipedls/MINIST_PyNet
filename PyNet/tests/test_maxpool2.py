@@ -1,14 +1,13 @@
-from max_pool_layer import *
-from helpers import *
+from context import pynet
 import numpy as np
 import cv2
 import math
 import random
 
 
-layer = MaxPoolLayer((2,4,4), (2,2), 2)
+layer = pynet.MaxPoolLayer((2,4,4), (2,2), 2)
 
-input = astype(np.array([[[1, 0, 1, 0], 
+input = pynet.astype(np.array([[[1, 0, 1, 0], 
 						  [0, 0, 0, 0],
 						  [1, 0, 1, 0],
 						  [0, 0, 0, 0],
