@@ -19,16 +19,16 @@ class MaxPoolLayer(Layer):
 
 		print "* MaxPool -> output_shape: " + str(self.output_shape) + "; K_size: "+str(kern_size)+"; stride: %d" % (stride)
 
-	# TODO: optimize
+	# TODO: optimize for when stride == kern_size
 	def forward(self, input):
 		N = input.shape[0]
-		# Inserts another dimesion so that we can use im2col, once we dont wanna merge all the channels
+
+		# Shifts the channels (axis=1) to another dimesion (axis=0) so that we can use im2col, once we want the max per channels
 		input = input.reshape( (N*input.shape[1],1)+input.shape[2:4] )
 
 		vec_input = im2col_cython(input, self.kern_size[0], self.kern_size[1], self.stride, self.output_shape[1], self.output_shape[2])
 
-		self.vec_input_shape = vec_input.shape
-		
+		# Saves the position for the backward step
  		self.vec_input_argmax = np.argmax(vec_input,axis=1)
 
 		output = vec_input[range(vec_input.shape[0]),self.vec_input_argmax].reshape( (N,)+self.output_shape)
@@ -50,20 +50,27 @@ class MaxPoolLayer(Layer):
 		# 			self.max_pos[n_filter, x_out, y_out] = input_argmax
 		# 			output[n_filter, x_out, y_out] = kern_input[input_argmax]
 
+		# Saving stuff for the backward step
+		self.vec_input_shape = vec_input.shape
+
 		return output
 
 	def backward(self, d_output_error):
 
+		# N of inputs (batch)
 		N = d_output_error.shape[0]
 
 		d_input = zeros(self.vec_input_shape)
 
+		# Propagation of the error to the position where the max of input was
 		d_input[range(d_input.shape[0]),self.vec_input_argmax] = d_output_error.flatten()
 
 		d_input = col2im_cython(d_input, N*self.input_shape[0],1,self.input_shape[1] , self.input_shape[2], 
 			self.kern_size[0], self.kern_size[1], self.stride, self.output_shape[1], self.output_shape[2])
 
-		d_input = d_input.reshape((N,)+self.input_shape)#squeeze(d_input, axis=1)
+		# Puting the channels back to the 1st axis
+		d_input = d_input.reshape((N,)+self.input_shape)
+		
 		# for x_start in range(0,d_output_error.shape[1]):
 		# 	x_inp = x_start * self.stride
 

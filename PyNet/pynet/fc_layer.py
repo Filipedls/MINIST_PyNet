@@ -22,7 +22,6 @@ class FCLayer(Layer):
 		self.input = 0
 		self.d_weights = zeros(self.weights.shape)
 		self.d_bias = zeros(self.bias.shape)
-		#self.d_input = 0
 
 		self.act = Activation(act_type)
 
@@ -30,15 +29,17 @@ class FCLayer(Layer):
 
 	# TODO: optimize
 	def forward(self, input):
+		# Reshaping the input, when its not a vector
 		if self.do_reshape:
-			input = input.reshape(input.shape[0], self.input_size)#flatten()
+			input = input.reshape(input.shape[0], self.input_size)
 
 		if input.shape[1] != self.input_size:
 			raise ValueError("WRONG INPUT SHAPE: " + str(input.shape) + "; weights_shape: "+str(self.input_size))
 
-
-		#print "weights:\n", self.weights, "input:\n", input
+		# The multiplication of the input by the weights
 		z = np.dot(input, self.weights) + self.bias
+
+		# Activation of the output
 		output = self.act.activate(z)
 
 		#for n in range(0, self.n_neurons):
@@ -50,13 +51,16 @@ class FCLayer(Layer):
 		return output
 
 	def backward(self, d_output_error):
-
+		# The derivative of the error of the output
 		d_x_output = self.act.diff(d_output_error)
 
+		# The derivative of the input (output of the previous layer)
 		d_input = np.dot(d_x_output, self.weights.T)
 		
-		self.d_weights += np.dot(self.input.T, d_x_output)#np.outer(self.input, d_x_output)#
+		# The derivative of the weights with respect to the error 
+		self.d_weights += np.dot(self.input.T, d_x_output)
 
+		# The derivative of the bias with respect to the error 
 		self.d_bias += d_x_output.sum(axis=0)
 
 		#for n in range(0, self.n_neurons):
@@ -65,10 +69,10 @@ class FCLayer(Layer):
 		#	self.d_weights[n,:] += d_x_output[n] * self.input
 		#	self.d_bias[n] = d_x_output[n]
 
+		# Going back to the input's shape
 		if self.do_reshape:
 			d_input = d_input.reshape((d_output_error.shape[0],)+self.input_shape)
 
-		#self.d_input = d_input
 		return d_input
 
 	def __del__(self):

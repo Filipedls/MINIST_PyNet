@@ -37,7 +37,7 @@ class Updater:
 				i += 1
 
 
-
+	# TODO: remove! This is just mom with everything "zeroed"
 	def udpate_sgd(self, params):
 		lr = params['lr'][0]/params['batch'][0]
 		i = 0

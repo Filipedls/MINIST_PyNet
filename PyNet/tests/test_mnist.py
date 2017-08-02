@@ -35,16 +35,17 @@ net_def_basic =  [['input', 1, 20, 20],
 			]
 
 
-net_def =  [['input', 1, 28, 28],
-			['conv', 3, 8, 0, 1],
-			['conv', 3, 8, 0, 1],
-			['maxpool', 2, 2],
-			['conv', 3, 16, 0, 1],
-			['conv', 3, 16, 0, 1],
-			['maxpool', 2, 2],
-			['fc', 64, 'lerelu'],
-			['fc', 10, 'softmax'],
-			['error','l1']
+net_def =  [
+			{'layer': 'input', 'c': 1, 'h': 28, 'w': 28},
+			{'layer': 'conv', 'kern_size': 3, 'n': 8, 'pad': 0, 'stride': 1},
+			{'layer': 'conv', 'kern_size': 3, 'n': 8, 'pad': 0, 'stride': 1},
+			{'layer': 'maxpool', 'kern_size': 2, 'stride': 2},
+			{'layer': 'conv', 'kern_size': 3, 'n': 16, 'pad': 0, 'stride': 1},
+			{'layer': 'conv', 'kern_size': 3, 'n': 16, 'pad': 0, 'stride': 1},
+			{'layer': 'maxpool', 'kern_size': 2, 'stride': 2},
+			{'layer': 'fc', 'n': 64, 'act_type': 'lerelu'},
+			{'layer': 'fc', 'n': 10, 'act_type': 'softmax'},
+			{'layer': 'error', 'type': 'l1'}
 		   ]
 
 

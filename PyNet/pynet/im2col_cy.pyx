@@ -1,3 +1,4 @@
+# HOW TO COMPILE:
 # python setup_cython.py build_ext --inplace
 
 # FROM -> https://github.com/huyouare/CS231n/tree/master/assignment2/cs231n

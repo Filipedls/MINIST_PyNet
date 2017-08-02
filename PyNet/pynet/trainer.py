@@ -2,7 +2,7 @@ from net import *
 from updater import *
 from helpers import *
 import random
-import cv2
+import cv2 # TODO: do we really need this here?!
 from timeit import default_timer as timer
 
 class Trainer:

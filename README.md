@@ -5,7 +5,7 @@ Neural Nets framework in Python, from scratch
 
 2. cd PyNet/pynet/
 
-3. Run "python test.py"
+3. Run "python test_mnist.py"
 
 
 ## CIFAR-10

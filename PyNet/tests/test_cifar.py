@@ -1,6 +1,5 @@
 import numpy as np
 from get_cifar import *
-import cv2
 
 from context import pynet
 
@@ -34,17 +33,17 @@ config = {
 	'save_file_name' : weights_f_name
 }
 
-net_def =  [['input', 3, 32, 32],
-			['conv', 3, 32, 0, 1],
-			['conv', 3, 32, 0, 1],
-			['maxpool', 2, 2],
-			['conv', 3, 32, 0, 1],
-			['conv', 3, 64, 0, 1],
-			['maxpool', 2, 2],
-			#['fc', 512, 'lerelu'],
-			['fc', 64, 'lerelu'],
-			['fc', 10, 'softmax'],
-			['error','l1']
+net_def =  [
+			{'layer': 'input', 'c': 3, 'h': 32, 'w': 32},
+			{'layer': 'conv', 'kern_size': 3, 'n': 32, 'pad': 0, 'stride': 1},
+			{'layer': 'conv', 'kern_size': 3, 'n': 32, 'pad': 0, 'stride': 1},
+			{'layer': 'maxpool', 'kern_size': 2, 'stride': 2},
+			{'layer': 'conv', 'kern_size': 3, 'n': 32, 'pad': 0, 'stride': 1},
+			{'layer': 'conv', 'kern_size': 3, 'n': 64, 'pad': 0, 'stride': 1},
+			{'layer': 'maxpool', 'kern_size': 2, 'stride': 2},
+			{'layer': 'fc', 'n': 64, 'act_type': 'lerelu'},
+			{'layer': 'fc', 'n': 10, 'act_type': 'softmax'},
+			{'layer': 'error', 'type': 'l1'}
 		   ]
 
 
@@ -62,15 +61,4 @@ elif trainer.train():
 	trainer.test()
 else:
 	print "Train was not sucessful... :("
-
-# Visualize your weights with openCV
-if False:
-	weights = net.check_weights(0).transpose(1,2,0)
-	weights = cv2.resize(weights,  (0,0), fx=20, fy=20, interpolation=cv2.INTER_AREA)
-
-	cv2.imshow('weights',weights)
-	cv2.imwrite('weights_0.png',weights)
-	cv2.waitKey(0)
-
-
 

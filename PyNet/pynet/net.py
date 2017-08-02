@@ -16,24 +16,29 @@ class Net:
 		print "=> NET:"
 		self.layers = []
 		for layer_def in layers_def:
-			if layer_def[0] == 'conv':
-				layer = ConvLayer(input_size, layer_def[2], (layer_def[1], layer_def[1]), layer_def[3], layer_def[4])
+			# Convolutional layer
+			if layer_def['layer'] == 'conv':
+				layer = ConvLayer(input_size, layer_def['n'], (layer_def['kern_size'], layer_def['kern_size']), layer_def['pad'], layer_def['stride'])
 				input_size = layer.output_shape
-			elif layer_def[0] == 'fc':
-				layer = FCLayer(input_size, layer_def[1], layer_def[2])
+			# Fully connected layer
+			elif layer_def['layer'] == 'fc':
+				layer = FCLayer(input_size, layer_def['n'], layer_def['act_type'])
 				input_size = (layer.n_neurons,)
-			elif layer_def[0] == 'maxpool':
-				layer = MaxPoolLayer(input_size, (layer_def[1], layer_def[1]), layer_def[2])
+			# Maxpool layer
+			elif layer_def['layer'] == 'maxpool':
+				layer = MaxPoolLayer(input_size, (layer_def['kern_size'], layer_def['kern_size']), layer_def['stride'])
 				input_size = layer.output_shape
-			elif layer_def[0] == 'input':
-				input_size = (layer_def[1], layer_def[2], layer_def[3])
+			# Input size definition
+			elif layer_def['layer'] == 'input':
+				input_size = (layer_def['c'], layer_def['h'], layer_def['w'])
 				self.input_size = input_size
 				print "* Input -> Size: ", input_size
 				continue
-			elif layer_def[0] == 'error':
-				layer = ErrorLayer(layer_def[1])
+			# Error layer
+			elif layer_def['layer'] == 'error':
+				layer = ErrorLayer(layer_def['type'])
 			else:
-				raise ValueError("*** UNKOWN LAYER TYPE ("+layer_def[0]+")")
+				raise ValueError("*** UNKOWN LAYER TYPE ("+layer_def['layer']+")")
 			self.layers.append(layer)
 
 		self.n_classes = int(input_size[0])
@@ -124,6 +129,17 @@ class Net:
 			w_max = np.max(weights)
 			weights = (weights - w_min)/(w_max-w_min)
 			print 'Max:', w_max, 'MIN:', w_min
+
+		# Visualize your weights with openCV
+		# if False:
+		# 	weights = net.check_weights(0).transpose(1,2,0)
+		# 	weights = cv2.resize(weights,  (0,0), fx=20, fy=20, interpolation=cv2.INTER_AREA)
+
+		# 	cv2.imshow('weights',weights)
+		# 	cv2.imwrite('weights_0.png',weights)
+		# 	cv2.waitKey(0)
+
+
 
 		return weights
 
